@@ -36,35 +36,18 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 500px;
-            animation-name: animatetop;
-            animation-duration: 0.4s
-        }
-        @keyframes animatetop {
-            from {top:-300px; opacity:0}
-            to {top:0; opacity:1}
-        }
     </style>
+    <!-- Chosen Palette: Warm neutrals with a red accent for highlights and a calm blue for interactive elements. -->
+    <!-- Application Structure Plan: The SPA is designed as a dashboard with a fixed header, a left-hand navigation/filter sidebar, and a dynamic main content area. This structure was chosen to transform the long, linear source report into a non-linear, user-friendly exploration tool. The sidebar allows users to quickly jump between item categories, while search and a "highlighted items" toggle provide quick filtering. The main content area dynamically updates to show a list of items for the selected category. This design prioritizes user control and reduces cognitive load by avoiding endless scrolling, making the dense information highly digestible. -->
+    <!-- Visualization & Content Choices:
+        - Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method
+        - Item Categories -> Organize & Navigate -> Sidebar Navigation -> Click to filter main list -> Provides quick, structured access to different item types -> HTML/CSS/JS.
+        - Currency Exchange Rates -> Provide a quick utility -> Interactive Text + Tooltip -> Input field to convert values -> Directly solves a user need for price calculation -> HTML/CSS/JS.
+        - Price Points Distribution -> Visualize market structure -> Bar Chart -> Hover to see item count -> Offers a high-level market overview not present in the raw data -> Chart.js (Canvas).
+        - Detailed Item Listings -> Display item specs & prices -> Dynamic List/Cards -> Click to view details -> Turns a static table into an interactive catalog -> HTML/CSS/JS.
+        - "重点推荐好货" -> Highlight key items -> Colored Card Border/Tag -> Visual cue -> Draws attention to priority items as per the source report -> HTML/CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 </head>
 <body class="bg-gray-100 text-gray-800">
 
@@ -73,7 +56,9 @@
         <header class="bg-white shadow-md p-4 sticky top-0 z-50">
             <div class="container mx-auto flex flex-col md:flex-row items-center justify-between">
                 <h1 class="text-2xl font-bold text-gray-900">D2R 交易市场</h1>
-                <!-- 联系方式已移除 -->
+                <div class="mt-2 md:mt-0 text-sm md:text-base text-gray-600">
+                    联系卖家: <span class="font-mono text-gray-900 font-medium">BlackWiz#31928</span>
+                </div>
             </div>
         </header>
 
@@ -106,28 +91,16 @@
                 <div>
                     <h2 class="text-xl font-semibold mb-2 text-gray-700">货币兑换</h2>
                     <p class="text-sm text-gray-600 mb-2">输入#符文数，获取紫宝石数量</p>
-                    <div class="flex flex-col space-y-4">
-                        <div class="flex items-center space-x-2">
-                            <select id="rune-select" class="p-2 border rounded-md">
-                                <option value="20">20#</option>
-                                <option value="21">21#</option>
-                                <option value="22">22#</option>
-                                <option value="23">23#</option>
-                                <option value="24">24#</option>
-                            </select>
-                            <span class="text-lg text-gray-600">=</span>
-                            <span id="pg-output" class="font-bold text-blue-600 text-lg">1 紫</span>
-                        </div>
-                        <!-- Manual Currency Conversion Module -->
-                        <div class="mt-4">
-                            <label for="manual-rune" class="block text-sm font-medium text-gray-700">自定义兑换</label>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <input type="number" id="manual-rune" placeholder="输入#符文数" class="w-2/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <span class="text-lg font-bold text-gray-600"># ≈</span>
-                                <input type="number" id="manual-pg" placeholder="紫宝石数" class="w-2/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <span class="text-lg font-bold text-gray-600">紫</span>
-                            </div>
-                        </div>
+                    <div class="flex items-center space-x-2">
+                        <select id="rune-select" class="p-2 border rounded-md">
+                            <option value="20">20#</option>
+                            <option value="21">21#</option>
+                            <option value="22">22#</option>
+                            <option value="23">23#</option>
+                            <option value="24">24#</option>
+                        </select>
+                        <span class="text-lg text-gray-600">=</span>
+                        <span id="pg-output" class="font-bold text-blue-600 text-lg">1 紫</span>
                     </div>
                 </div>
             </aside>
@@ -170,639 +143,674 @@
     </div>
 
     <!-- Modal for Item Details -->
-    <div id="item-modal" class="modal">
-        <div class="modal-content">
+    <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-11/12 transform scale-95 transition-transform duration-300">
             <div class="flex justify-between items-start mb-4">
                 <h3 id="modal-item-name" class="text-2xl font-bold text-gray-900"></h3>
-                <button id="close-modal" class="text-gray-400 text-2xl font-bold hover:text-gray-600 transition-colors">&times;</button>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition-colors">&times;</button>
             </div>
             <div id="modal-item-details" class="space-y-4 text-gray-700">
                 <p><strong>属性:</strong> <span id="modal-item-attrs"></span></p>
                 <p><strong>价格:</strong> <span id="modal-item-price" class="text-red-600 font-bold"></span></p>
                 <p><strong>备注:</strong> <span id="modal-item-notes"></span></p>
+                <p class="text-sm text-gray-500 mt-4">联系卖家: <span class="font-mono">BlackWiz#31928</span></p>
             </div>
         </div>
     </div>
-    
-    <!-- Modal for Edit/Delete -->
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">编辑交易内容</h3>
-            <form id="edit-form" class="space-y-4">
-                <div>
-                    <label for="edit-name" class="block text-sm font-medium text-gray-700">物品名称:</label>
-                    <input type="text" id="edit-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-attrs" class="block text-sm font-medium text-gray-700">属性:</label>
-                    <input type="text" id="edit-attrs" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-price" class="block text-sm font-medium text-gray-700">价格:</label>
-                    <input type="text" id="edit-price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-notes" class="block text-sm font-medium text-gray-700">备注:</label>
-                    <input type="text" id="edit-notes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" id="delete-btn" class="px-4 py-2 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 transition-colors">删除</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors">保存</button>
-                    <button type="button" id="close-edit-modal" class="px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md hover:bg-gray-400 transition-colors">取消</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let data = {
+            const data = {
                 "毁灭": [
-                    { "id": 1, "name": "毁灭", "attrs": "13/11/9", "price": "未知", "notes": "" },
-                    { "id": 2, "name": "毁灭", "attrs": "16/11/6", "price": "未知", "notes": "" },
-                    { "id": 3, "name": "毁灭", "attrs": "17/10/8", "price": "未知", "notes": "" },
-                    { "id": 4, "name": "毁灭", "attrs": "12/15/6", "price": "未知", "notes": "" },
-                    { "id": 5, "name": "毁灭", "attrs": "18/13/6", "price": "40# (2紫)", "notes": "", "highlight": true },
-                    { "id": 6, "name": "毁灭", "attrs": "19/13/10", "price": "23#", "notes": "" },
-                    { "id": 7, "name": "毁灭", "attrs": "16/20/7", "price": "24#", "notes": "" }
+                    { "name": "毁灭", "attrs": "13/11/9", "price": "未知", "notes": "" },
+                    { "name": "毁灭", "attrs": "16/11/6", "price": "未知", "notes": "" },
+                    { "name": "毁灭", "attrs": "17/10/8", "price": "未知", "notes": "" },
+                    { "name": "毁灭", "attrs": "12/15/6", "price": "未知", "notes": "" },
+                    { "name": "毁灭", "attrs": "18/13/6", "price": "40# (2紫)", "notes": "", "highlight": true },
+                    { "name": "毁灭", "attrs": "19/13/10", "price": "23#", "notes": "" },
+                    { "name": "毁灭", "attrs": "16/20/7", "price": "24#", "notes": "" }
                 ],
                 "暗金武器": [
-                    { "id": 8, "name": "泰坦的复仇 (礼仪标枪)", "attrs": "一般", "price": "21#", "notes": "" },
-                    { "id": 9, "name": "碧蓝怒火 (幻化之刃)", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 10, "name": "李奥瑞克王 (古墓魔杖)", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 11, "name": "骨寸断 (三尖枪)", "attrs": "189ED, 无形", "price": "25#", "notes": "" },
-                    { "id": 12, "name": "ali88 (地狱之口) 圆月弯刀", "attrs": "", "price": "21#", "notes": "" },
-                    { "id": 13, "name": "绝命庇护 (庇护弓)", "attrs": "5导引箭", "price": "22#", "notes": "" },
-                    { "id": 14, "name": "巫师之刺 (骸骨小刀)", "attrs": "", "price": "21#", "notes": "" },
-                    { "id": 15, "name": "死亡尖钻 (战斗飞镖)", "attrs": "170ED, 无形", "price": "23#", "notes": "" },
-                    { "id": 16, "name": "死神丧钟 (斩镰)", "attrs": "202ED, 13LL", "price": "22#", "notes": "" },
-                    { "id": 17, "name": "死神丧钟 (斩镰)", "attrs": "212ED, 14LL", "price": "22#", "notes": "" },
-                    { "id": 18, "name": "死神丧钟 (斩镰)", "attrs": "230ED, 14LL", "price": "23#", "notes": "" },
-                    { "id": 19, "name": "死神丧钟 (斩镰)", "attrs": "240ED, 12LL, 无形", "price": "60# (30# * 2)", "notes": "" },
-                    { "id": 20, "name": "高祖 (巨神之刃)", "attrs": "161ED", "price": "22#", "notes": "" },
-                    { "id": 21, "name": "盗墓者", "attrs": "3孔", "price": "22#", "notes": "" },
-                    { "id": 22, "name": "无形脾气 (狂乱斧)", "attrs": "3技能, 20%电抗, 19%火抗", "price": "2*30#", "notes": "" },
-                    { "id": 23, "name": "蚀肉骑士 (食肉骑士)", "attrs": "200ed, 未升级", "price": "30#", "notes": "" },
-                    { "id": 24, "name": "死神之深度 (死冰棒)", "attrs": "29%冰伤", "price": "30#", "notes": "" }
+                    { "name": "泰坦的复仇 (礼仪标枪)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "碧蓝怒火 (幻化之刃)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "李奥瑞克王 (古墓魔杖)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "骨寸断 (三尖枪)", "attrs": "189ED, 无形", "price": "25#", "notes": "" },
+                    { "name": "ali88 (地狱之口) 圆月弯刀", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "绝命庇护 (庇护弓)", "attrs": "5导引箭", "price": "22#", "notes": "" },
+                    { "name": "巫师之刺 (骸骨小刀)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "死亡尖钻 (战斗飞镖)", "attrs": "170ED, 无形", "price": "23#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "202ED, 13LL", "price": "22#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "212ED, 14LL", "price": "22#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "230ED, 14LL", "price": "23#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "240ED, 12LL, 无形", "price": "60# (30# * 2)", "notes": "" },
+                    { "name": "高祖 (巨神之刃)", "attrs": "161ED", "price": "22#", "notes": "" },
+                    { "name": "盗墓者", "attrs": "3孔", "price": "22#", "notes": "" },
+                    { "name": "无形脾气 (狂乱斧)", "attrs": "3技能, 20%电抗, 19%火抗", "price": "2*30#", "notes": "" },
+                    { "name": "蚀肉骑士 (食肉骑士)", "attrs": "200ed, 未升级", "price": "30#", "notes": "" },
+                    { "name": "死神之深度 (死冰棒)", "attrs": "29%冰伤", "price": "30#", "notes": "" }
                 ],
                 "暗金防具": [
-                    { "id": 25, "name": "巨角治愈头盔", "attrs": "460DEF", "price": "28#", "notes": "" },
-                    { "id": 26, "name": "影舞者 (勇士护胫)", "attrs": "2技能, 17敏捷, 无形, 200DEF", "price": "23#", "notes": "" },
-                    { "id": 27, "name": "影舞者 (勇士护胫)", "attrs": "1技能, 20敏捷, 91ED", "price": "24#", "notes": "" },
-                    { "id": 28, "name": "影舞者 (勇士护胫)", "attrs": "2技能, 22敏捷, 99ED", "price": "28#", "notes": "" },
-                    { "id": 29, "name": "影舞者 (勇士护胫)", "attrs": "2技能, 25敏捷", "price": "30#", "notes": "" },
-                    { "id": 30, "name": "水上漂 (鲨皮之靴)", "attrs": "一般", "price": "21#", "notes": "" },
-                    { "id": 31, "name": "沙暴鞋", "attrs": "一般", "price": "21#", "notes": "" },
-                    { "id": 32, "name": "骨髓行走 (骸骨网靴)", "attrs": "2技能", "price": "22#", "notes": "" },
-                    { "id": 33, "name": "纱织 (铁网靴)", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 34, "name": "安达利尔的容貌", "attrs": "8LL, 29STR, 141ED", "price": "24#", "notes": "" },
-                    { "id": 35, "name": "安达利尔的容貌", "attrs": "10LL, 25STR, 142ED", "price": "24#", "notes": "" },
-                    { "id": 36, "name": "安达利尔的容貌", "attrs": "9LL, 29STR, 135ED", "price": "25#", "notes": "" },
-                    { "id": 37, "name": "安达利尔的容貌", "attrs": "无形", "price": "28#", "notes": "" },
-                    { "id": 38, "name": "夜翼面纱", "attrs": "9%冰伤, 17敏捷", "price": "23#", "notes": "" },
-                    { "id": 39, "name": "奇拉守护 (头冠)", "attrs": "4R6X", "price": "23#", "notes": "" },
-                    { "id": 40, "name": "奇拉守护 (头冠)", "attrs": "4R70", "price": "24#", "notes": "" },
-                    { "id": 41, "name": "加尔长发 (狼头)", "attrs": "", "price": "21#", "notes": "" },
-                    { "id": 42, "name": "巨骷髅 (骸骨面罩)", "attrs": "2孔, 29+STR", "price": "22#", "notes": "" },
-                    { "id": 43, "name": "钢影 (覆颊盔)", "attrs": "11吸火", "price": "22#", "notes": "" },
-                    { "id": 44, "name": "110物免腰带 (吸血圣王之圈)", "attrs": "一般", "price": "22#", "notes": "" },
-                    { "id": 45, "name": "110物免腰带 (吸血圣王之圈)", "attrs": "3X/14", "price": "23#", "notes": "" },
-                    { "id": 46, "name": "110物免腰带 (吸血圣王之圈)", "attrs": "38/15", "price": "24#", "notes": "" },
-                    { "id": 47, "name": "110物免腰带 (吸血圣王之圈)", "attrs": "39VIT, 14DR", "price": "23#", "notes": "" },
-                    { "id": 48, "name": "长串之耳 (魔皮束带)", "attrs": "一般", "price": "21#", "notes": "" },
-                    { "id": 49, "name": "穿刺腰带", "attrs": "", "price": "21#", "notes": "" },
-                    { "id": 50, "name": "碎钢 (巨魔护手)", "attrs": "32ED, 17力量", "price": "24#", "notes": "" },
-                    { "id": 51, "name": "地狱之口 (吸火手套)", "attrs": "一般", "price": "22#", "notes": "" },
-                    { "id": 52, "name": "运气守护 (锁甲手套)", "attrs": "40MF", "price": "24#", "notes": "新增" },
-                    { "id": 53, "name": "运气守护 (锁甲手套)", "attrs": "35+MF", "price": "22#", "notes": "" },
-                    { "id": 54, "name": "卓古拉之握 (手套)", "attrs": "9LL, 11STR", "price": "22#", "notes": "" },
-                    { "id": 55, "name": "卓古拉之握 (手套)", "attrs": "9LL, 13STR", "price": "23#", "notes": "" },
-                    { "id": 56, "name": "卓古拉之握 (手套)", "attrs": "法师之拳 (手套)", "price": "21#", "notes": "" },
-                    { "id": 57, "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R2X", "price": "21#", "notes": "" },
-                    { "id": 58, "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R3X", "price": "23#", "notes": "" },
-                    { "id": 59, "name": "奥玛斯长袍", "attrs": "3火球", "price": "24#", "notes": "" },
-                    { "id": 60, "name": "奥玛斯长袍", "attrs": "3冰霜新星", "price": "24#", "notes": "" },
-                    { "id": 61, "name": "奥玛斯长袍", "attrs": "15%电直伤", "price": "30#", "notes": "" },
-                    { "id": 62, "name": "奥玛斯长袍", "attrs": "15%电新星", "price": "30#", "notes": "" },
-                    { "id": 63, "name": "诗蔻蒂的愤怒 (赤褐战甲)", "attrs": "200ED", "price": "23#", "notes": "" },
-                    { "id": 64, "name": "督瑞尔的壳 (护胸甲)", "attrs": "一般", "price": "21#", "notes": "" },
-                    { "id": 65, "name": "物免盾 (骨盾)", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 66, "name": "警戒之墙", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 67, "name": "骨焰 (魅魔颅骨)", "attrs": "3技能, 24抗性", "price": "24#", "notes": "" },
-                    { "id": 68, "name": "技能腰带 (蜘蛛之网)", "attrs": "", "price": "25#", "notes": "新增" }
+                    { "name": "巨角治愈头盔", "attrs": "460DEF", "price": "28#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 17敏捷, 无形, 200DEF", "price": "23#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "1技能, 20敏捷, 91ED", "price": "24#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 22敏捷, 99ED", "price": "28#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 25敏捷", "price": "30#", "notes": "" },
+                    { "name": "水上漂 (鲨皮之靴)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "沙暴鞋", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "骨髓行走 (骸骨网靴)", "attrs": "2技能", "price": "22#", "notes": "" },
+                    { "name": "纱织 (铁网靴)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "8LL, 29STR, 141ED", "price": "24#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "10LL, 25STR, 142ED", "price": "24#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "9LL, 29STR, 135ED", "price": "25#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "无形", "price": "28#", "notes": "" },
+                    { "name": "夜翼面纱", "attrs": "9%冰伤, 17敏捷", "price": "23#", "notes": "" },
+                    { "name": "奇拉守护 (头冠)", "attrs": "4R6X", "price": "23#", "notes": "" },
+                    { "name": "奇拉守护 (头冠)", "attrs": "4R70", "price": "24#", "notes": "" },
+                    { "name": "加尔长发 (狼头)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "巨骷髅 (骸骨面罩)", "attrs": "2孔, 29+STR", "price": "22#", "notes": "" },
+                    { "name": "钢影 (覆颊盔)", "attrs": "11吸火", "price": "22#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "3X/14", "price": "23#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "38/15", "price": "24#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "39VIT, 14DR", "price": "23#", "notes": "" },
+                    { "name": "长串之耳 (魔皮束带)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "穿刺腰带", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "碎钢 (巨魔护手)", "attrs": "32ED, 17力量", "price": "24#", "notes": "" },
+                    { "name": "地狱之口 (吸火手套)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "运气守护 (锁甲手套)", "attrs": "40MF", "price": "24#", "notes": "新增" },
+                    { "name": "运气守护 (锁甲手套)", "attrs": "35+MF", "price": "22#", "notes": "" },
+                    { "name": "卓古拉之握 (手套)", "attrs": "9LL, 11STR", "price": "22#", "notes": "" },
+                    { "name": "卓古拉之握 (手套)", "attrs": "9LL, 13STR", "price": "23#", "notes": "" },
+                    { "name": "法师之拳 (手套)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R2X", "price": "21#", "notes": "" },
+                    { "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R3X", "price": "23#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "3火球", "price": "24#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "3冰霜新星", "price": "24#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "15%电直伤", "price": "30#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "15%电新星", "price": "30#", "notes": "" },
+                    { "name": "诗蔻蒂的愤怒 (赤褐战甲)", "attrs": "200ED", "price": "23#", "notes": "" },
+                    { "name": "督瑞尔的壳 (护胸甲)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "物免盾 (骨盾)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "警戒之墙", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "骨焰 (魅魔颅骨)", "attrs": "3技能, 24抗性", "price": "24#", "notes": "" },
+                    { "name": "技能腰带 (蜘蛛之网)", "attrs": "", "price": "25#", "notes": "新增" }
                 ],
                 "首饰/珠宝": [
-                    { "id": 69, "name": "猫眼 (项链)", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 70, "name": "项链", "attrs": "3陷阱/3战吼", "price": "22#", "notes": "" },
-                    { "id": 71, "name": "项链", "attrs": "3武学, 95生命", "price": "25#", "notes": "" },
-                    { "id": 72, "name": "乔丹之石 (戒指)", "attrs": "", "price": "27#", "notes": "" },
-                    { "id": 73, "name": "鬼火投射者 (戒指)", "attrs": "18电吸, 10MF", "price": "24#", "notes": "" },
-                    { "id": 74, "name": "鬼火投射者 (戒指)", "attrs": "15%吸电, 14%电伤", "price": "27#", "notes": "" },
-                    { "id": 75, "name": "矮人之星 (戒指)", "attrs": "一般", "price": "22#", "notes": "" },
-                    { "id": 76, "name": "矮人之星 (戒指)", "attrs": "极品", "price": "23#", "notes": "" },
-                    { "id": 77, "name": "乌鸦之霜 (戒指)", "attrs": "212AR, 20敏捷", "price": "24#", "notes": "" },
-                    { "id": 78, "name": "拿各 (戒指)", "attrs": "29MF", "price": "22#", "notes": "" },
-                    { "id": 79, "name": "腐肉之风 (戒指)", "attrs": "9LL", "price": "22#", "notes": "" },
-                    { "id": 80, "name": "死亡之珠 (电)", "attrs": "-5/+5", "price": "30#", "notes": "" },
-                    { "id": 81, "name": "死亡之珠 (电)", "attrs": "-5/+4", "price": "27#", "notes": "" },
-                    { "id": 82, "name": "死亡之珠 (电)", "attrs": "-4/+4", "price": "26#", "notes": "" },
-                    { "id": 83, "name": "死亡之珠 (电)", "attrs": "-3/+5", "price": "26#", "notes": "" },
-                    { "id": 84, "name": "死亡之珠 (冰)", "attrs": "-3/+4", "price": "22#", "notes": "" },
-                    { "id": 85, "name": "死亡之珠 (冰)", "attrs": "-4/+4", "price": "23#", "notes": "" },
-                    { "id": 86, "name": "死亡之珠 (毒)", "attrs": "-3/+3", "price": "21#", "notes": "" },
-                    { "id": 87, "name": "死亡之珠 (毒)", "attrs": "-3/+4", "price": "21#", "notes": "" },
-                    { "id": 88, "name": "死亡之珠 (毒)", "attrs": "-3/+5", "price": "22#", "notes": "" },
-                    { "id": 89, "name": "死亡之珠 (毒)", "attrs": "-5/+3", "price": "22#", "notes": "" },
-                    { "id": 90, "name": "死亡之珠 (毒)", "attrs": "-4/+4", "price": "22#", "notes": "" },
-                    { "id": 91, "name": "死亡之珠 (毒)", "attrs": "-5/+5", "price": "26#", "notes": "" },
-                    { "id": 92, "name": "死亡之珠 (火)", "attrs": "-3/+4", "price": "21#", "notes": "" },
-                    { "id": 93, "name": "法师火炬", "attrs": "11/15", "price": "28#", "notes": "" },
-                    { "id": 94, "name": "鳗鱼头 (权冠)", "attrs": "", "price": "30#", "notes": "" },
-                    { "id": 95, "name": "格里芬之眼 (权冠)", "attrs": "", "price": "28#", "notes": "" }
+                    { "name": "猫眼 (项链)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "项链", "attrs": "3陷阱/3战吼", "price": "22#", "notes": "" },
+                    { "name": "项链", "attrs": "3武学, 95生命", "price": "25#", "notes": "" },
+                    { "name": "乔丹之石 (戒指)", "attrs": "", "price": "27#", "notes": "" },
+                    { "name": "鬼火投射者 (戒指)", "attrs": "18电吸, 10MF", "price": "24#", "notes": "" },
+                    { "name": "鬼火投射者 (戒指)", "attrs": "15%吸电, 14%电伤", "price": "27#", "notes": "" },
+                    { "name": "矮人之星 (戒指)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "矮人之星 (戒指)", "attrs": "极品", "price": "23#", "notes": "" },
+                    { "name": "乌鸦之霜 (戒指)", "attrs": "212AR, 20敏捷", "price": "24#", "notes": "" },
+                    { "name": "拿各 (戒指)", "attrs": "29MF", "price": "22#", "notes": "" },
+                    { "name": "腐肉之风 (戒指)", "attrs": "9LL", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-5/+5", "price": "30#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-5/+4", "price": "27#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-4/+4", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-3/+5", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (冰)", "attrs": "-3/+4", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (冰)", "attrs": "-4/+4", "price": "23#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+3", "price": "21#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+4", "price": "21#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+5", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-5/+3", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-4/+4", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-5/+5", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (火)", "attrs": "-3/+4", "price": "21#", "notes": "" },
+                    { "name": "法师火炬", "attrs": "11/15", "price": "28#", "notes": "" },
+                    { "name": "鳗鱼头 (权冠)", "attrs": "", "price": "30#", "notes": "" },
+                    { "name": "格里芬之眼 (权冠)", "attrs": "", "price": "28#", "notes": "" }
                 ],
                 "黄/蓝装类": [
-                    { "id": 96, "name": "【蓝NEC盾牌】", "attrs": "3毒骨技能/2剧毒新星", "price": "30#*2", "notes": "未打孔", "highlight": true },
-                    { "id": 97, "name": "【蓝项链】", "attrs": "3法师闪电技能/10%FCR", "price": "31#*2", "notes": "", "highlight": true },
-                    { "id": 98, "name": "【手工项链】", "attrs": "2法师/17%FCR/14法力/8%法力恢复/13%全抗/35%毒抗", "price": "30#*8", "notes": "", "highlight": true },
-                    { "id": 99, "name": "【手工项链】", "attrs": "2法师/19%FCR/生命回复7/19法力/5%法力恢复/13%全抗", "price": "30#*4", "notes": "", "highlight": true },
-                    { "id": 100, "name": "【手工项链】", "attrs": "2法师/20%FCR/12AR/10法力/4%法力恢复/32%火炕", "price": "30#*3", "notes": "", "highlight": true },
-                    { "id": 101, "name": "【手工项链】", "attrs": "2法师/19%FCR/82法力/5%法力恢复", "price": "30#", "notes": "", "highlight": true },
-                    { "id": 102, "name": "【黄项链】", "attrs": "2法师/10%FCR/39%寒抗/36%电抗/36%EG", "price": "30#*3", "notes": "", "highlight": true },
-                    { "id": 103, "name": "【手工项链】", "attrs": "2亚马逊/19%FCR/18法力/18%电抗/75%毒缩", "price": "30#*2", "notes": "", "highlight": true },
-                    { "id": 104, "name": "【手工项链】", "attrs": "2亚马逊/16%FCR/25法力/6%全抗", "price": "28#", "notes": "" },
-                    { "id": 105, "name": "【手工项链】", "attrs": "2圣骑士/17%FCR/51生命/18法力/5%法力恢复", "price": "30#", "notes": "" },
-                    { "id": 106, "name": "【手工项链】", "attrs": "2死灵/20%FCR/40法力/7%法力恢复/30%电炕", "price": "30#*4", "notes": "", "highlight": true },
-                    { "id": 107, "name": "【手工项链】", "attrs": "2死灵/10%FCR/3%法力偷取/9能量/10法力/法力恢复6%", "price": "26#", "notes": "" },
-                    { "id": 108, "name": "【手工项链】", "attrs": "2死灵召唤/16%FCR/15法力/法力恢复6%/9%毒抗", "price": "26#", "notes": "" },
-                    { "id": 109, "name": "【手工项链】", "attrs": "2刺客/10%FCR/58生命/18法力/5%法力恢复/13%全抗/52%火抗", "price": "30#*6", "notes": "", "highlight": true },
-                    { "id": 110, "name": "【手工项链】", "attrs": "2刺客武艺/10%FCR/5能量/6生命/15法力/6%法力恢复/8%火炕", "price": "26#", "notes": "低等级马赛克刺客可用" },
-                    { "id": 111, "name": "【手工项链】", "attrs": "2德鲁伊元素/20%FCR/10法力/8%法力恢复/13%全抗/18%毒抗", "price": "31#*2", "notes": "", "highlight": true },
-                    { "id": 112, "name": "【黄项链/打钱】", "attrs": "1野蛮人/40法力/71%EG/22%MF", "price": "31#", "notes": "" },
-                    { "id": 113, "name": "【黄项链/打钱】", "attrs": "1野蛮人/6%偷蓝/30%毒抗/77%EG", "price": "31#", "notes": "" },
-                    { "id": 114, "name": "【黄项链】", "attrs": "2刺客/10FCR/10%MF", "price": "23#", "notes": "67级可用,低等级马赛克刺客可用" },
-                    { "id": 115, "name": "【黄项链】", "attrs": "2刺客/10FCR/6%毒抗/5%MF", "price": "23#", "notes": "67级可用,低等级马赛克刺客可用" },
-                    { "id": 116, "name": "【黄项链】", "attrs": "1法师闪电/10FCR/47法力/毒抗17%/22%MF", "price": "24#", "notes": "22级可用,低等级顶球新星法师可用，全部有用", "highlight": true },
-                    { "id": 117, "name": "【黄项链】", "attrs": "(30级PK)2圣骑士战斗/15AR/58生命/43法力/5%毒抗/冰冻减半", "price": "30#*3", "notes": "", "highlight": true },
-                    { "id": 118, "name": "【黄项链】", "attrs": "(30级PK)2亚马逊被动/10%FCR/14%全抗/32%毒抗", "price": "24#", "notes": "" },
-                    { "id": 119, "name": "【黄项链】", "attrs": "(30级PK)1圣骑士/10%FCR/30生命/36法力/31%电抗", "price": "27#", "notes": "" },
-                    { "id": 120, "name": "【手工戒指/双吸高力量高法力】", "attrs": "5%LM/3%LL/23力量/10能量/13生命/47法力", "price": "27#", "notes": "", "highlight": true },
-                    { "id": 121, "name": "【手工戒指/高吸血/敏捷】", "attrs": "10%LL/4力量/10敏捷/15生命/20法力", "price": "24#", "notes": "" },
-                    { "id": 122, "name": "【黄戒指/FCR/高法力/EK】", "attrs": "(30级PK)10%FCR/27AR/13能量/77法力/1DR/1EK", "price": "27#", "notes": "", "highlight": true },
-                    { "id": 123, "name": "【黄戒指/FCR/高AR/偷蓝/法力】", "attrs": "10%FCR/98AR/4%偷蓝/54法力/20%毒抗", "price": "27#", "notes": "", "highlight": true },
-                    { "id": 124, "name": "【黄戒指/敏捷/全抗/偷生命】", "attrs": "5%LL/12DEX/29法力/11全抗/2MDR/8%MF", "price": "25#", "notes": "48级可用" },
-                    { "id": 125, "name": "【黄戒指/PK】", "attrs": "5MIN/118AR/35生命/26%冰抗/21%火炕/生命回复+3", "price": "26#", "notes": "60级可用" },
-                    { "id": 126, "name": "【黄戒指/PK】", "attrs": "71AR/33生命/50法力/5全抗/25%PLR", "price": "24#", "notes": "60级可用" },
-                    { "id": 127, "name": "【黄鞋/高敏/电/火/毒】", "attrs": "30%高跑/9敏捷/26%电抗/26%火炕/34%毒抗/毒缩25%", "price": "4*30#", "notes": "(20力量)魔皮长靴", "highlight": true },
-                    { "id": 128, "name": "【黄鞋/冰/火/MF】", "attrs": "10%高跑/10%FHR/37%冰抗/40%火炕/10%MF", "price": "25#", "notes": "(50力量需求)轻铠靴" },
-                    { "id": 129, "name": "【黄鞋/冰/火/打钱】", "attrs": "20%高跑/27%冰抗/38%火抗/70%EG/19%MF", "price": "24#", "notes": "无力量需求,重靴" },
-                    { "id": 130, "name": "【黄鞋/电/敏/法力】", "attrs": "20%高跑/6敏捷/36法力/27%电抗/25%毒缩", "price": "24#", "notes": "" },
-                    { "id": 131, "name": "【黄手套】", "attrs": "20IAS/12%电抗/27%火抗/24%MF", "price": "23#=5紫", "notes": "" }
+                    { "name": "【蓝NEC盾牌】", "attrs": "3毒骨技能/2剧毒新星", "price": "30#*2", "notes": "未打孔", "highlight": true },
+                    { "name": "【蓝项链】", "attrs": "3法师闪电技能/10%FCR", "price": "31#*2", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/17%FCR/14法力/8%法力恢复/13%全抗/35%毒抗", "price": "30#*8", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/19%FCR/生命回复7/19法力/5%法力恢复/13%全抗", "price": "30#*4", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/20%FCR/12AR/10法力/4%法力恢复/32%火炕", "price": "30#*3", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/19%FCR/82法力/5%法力恢复", "price": "30#", "notes": "", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "2法师/10%FCR/39%寒抗/36%电抗/36%EG", "price": "30#*3", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2亚马逊/19%FCR/18法力/18%电抗/75%毒缩", "price": "30#*2", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2亚马逊/16%FCR/25法力/6%全抗", "price": "28#", "notes": "" },
+                    { "name": "【手工项链】", "attrs": "2圣骑士/17%FCR/51生命/18法力/5%法力恢复", "price": "30#", "notes": "" },
+                    { "name": "【手工项链】", "attrs": "2死灵/20%FCR/40法力/7%法力恢复/30%电炕", "price": "30#*4", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2死灵/10%FCR/3%法力偷取/9能量/10法力/法力恢复6%", "price": "26#", "notes": "" },
+                    { "name": "【手工项链】", "attrs": "2死灵召唤/16%FCR/15法力/法力恢复6%/9%毒抗", "price": "26#", "notes": "" },
+                    { "name": "【手工项链】", "attrs": "2刺客/10%FCR/58生命/18法力/5%法力恢复/13%全抗/52%火抗", "price": "30#*6", "notes": "", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2刺客武艺/10%FCR/5能量/6生命/15法力/6%法力恢复/8%火炕", "price": "26#", "notes": "低等级马赛克刺客可用" },
+                    { "name": "【手工项链】", "attrs": "2德鲁伊元素/20%FCR/10法力/8%法力恢复/13%全抗/18%毒抗", "price": "31#*2", "notes": "", "highlight": true },
+                    { "name": "【黄项链/打钱】", "attrs": "1野蛮人/40法力/71%EG/22%MF", "price": "31#", "notes": "" },
+                    { "name": "【黄项链/打钱】", "attrs": "1野蛮人/6%偷蓝/30%毒抗/77%EG", "price": "31#", "notes": "" },
+                    { "name": "【黄项链】", "attrs": "2刺客/10FCR/10%MF", "price": "23#", "notes": "67级可用,低等级马赛克刺客可用" },
+                    { "name": "【黄项链】", "attrs": "2刺客/10FCR/6%毒抗/5%MF", "price": "23#", "notes": "67级可用,低等级马赛克刺客可用" },
+                    { "name": "【黄项链】", "attrs": "1法师闪电/10FCR/47法力/毒抗17%/22%MF", "price": "24#", "notes": "22级可用,低等级顶球新星法师可用，全部有用", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "(30级PK)2圣骑士战斗/15AR/58生命/43法力/5%毒抗/冰冻减半", "price": "30#*3", "notes": "", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "(30级PK)2亚马逊被动/10%FCR/14%全抗/32%毒抗", "price": "24#", "notes": "" },
+                    { "name": "【黄项链】", "attrs": "(30级PK)1圣骑士/10%FCR/30生命/36法力/31%电抗", "price": "27#", "notes": "" },
+                    { "name": "【手工戒指/双吸高力量高法力】", "attrs": "5%LM/3%LL/23力量/10能量/13生命/47法力", "price": "27#", "notes": "", "highlight": true },
+                    { "name": "【手工戒指/高吸血/敏捷】", "attrs": "10%LL/4力量/10敏捷/15生命/20法力", "price": "24#", "notes": "" },
+                    { "name": "【黄戒指/FCR/高法力/EK】", "attrs": "(30级PK)10%FCR/27AR/13能量/77法力/1DR/1EK", "price": "27#", "notes": "", "highlight": true },
+                    { "name": "【黄戒指/FCR/高AR/偷蓝/法力】", "attrs": "10%FCR/98AR/4%偷蓝/54法力/20%毒抗", "price": "27#", "notes": "", "highlight": true },
+                    { "name": "【黄戒指/敏捷/全抗/偷生命】", "attrs": "5%LL/12DEX/29法力/11全抗/2MDR/8%MF", "price": "25#", "notes": "48级可用" },
+                    { "name": "【黄戒指/PK】", "attrs": "5MIN/118AR/35生命/26%冰抗/21%火炕/生命回复+3", "price": "26#", "notes": "60级可用" },
+                    { "name": "【黄戒指/PK】", "attrs": "71AR/33生命/50法力/5全抗/25%PLR", "price": "24#", "notes": "60级可用" },
+                    { "name": "【黄鞋/高敏/电/火/毒】", "attrs": "30%高跑/9敏捷/26%电抗/26%火炕/34%毒抗/毒缩25%", "price": "4*30#", "notes": "(20力量)魔皮长靴", "highlight": true },
+                    { "name": "【黄鞋/冰/火/MF】", "attrs": "10%高跑/10%FHR/37%冰抗/40%火炕/10%MF", "price": "25#", "notes": "(50力量需求)轻铠靴" },
+                    { "name": "【黄鞋/冰/火/打钱】", "attrs": "20%高跑/27%冰抗/38%火抗/70%EG/19%MF", "price": "24#", "notes": "无力量需求,重靴" },
+                    { "name": "【黄鞋/电/敏/法力】", "attrs": "20%高跑/6敏捷/36法力/27%电抗/25%毒缩", "price": "24#", "notes": "" },
+                    { "name": "【黄手套】", "attrs": "20IAS/12%电抗/27%火抗/24%MF", "price": "23#=5紫", "notes": "" }
                 ],
                 "技能板/护身符": [
-                    { "id": 132, "name": "法师火系GC", "attrs": "36生命", "price": "乔", "notes": "新增" },
-                    { "id": 133, "name": "亚马逊标枪GC", "attrs": "12FHR", "price": "罗", "notes": "新增" },
-                    { "id": 134, "name": "法师冰系GC", "attrs": "31生命", "price": "28#", "notes": "" },
-                    { "id": 135, "name": "刺客暗影修行GC", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 136, "name": "亚马逊被动GC", "attrs": "26生命", "price": "24#", "notes": "" },
-                    { "id": 137, "name": "亚马逊被动GC", "attrs": "一般", "price": "22#", "notes": "" },
-                    { "id": 138, "name": "死灵召唤GC", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 139, "name": "死灵召唤GC", "attrs": "38生命", "price": "30#", "notes": "" },
-                    { "id": 140, "name": "认证巴尔GC", "attrs": "", "price": "22#", "notes": "" },
-                    { "id": 141, "name": "GC", "attrs": "4R13", "price": "23#", "notes": "" },
-                    { "id": 142, "name": "SC", "attrs": "175PD", "price": "25#", "notes": "" },
-                    { "id": 143, "name": "破免板 (破毒)", "attrs": "70%", "price": "25#", "notes": "" },
-                    { "id": 144, "name": "破免板 (破电)", "attrs": "70%", "price": "30#", "notes": "" },
-                    { "id": 145, "name": "破免板 (破冰)", "attrs": "75%", "price": "3紫", "notes": "" },
-                    { "id": 146, "name": "破免板 (破冰)", "attrs": "78%", "price": "2紫", "notes": "" },
-                    { "id": 147, "name": "破冰板", "attrs": "77", "price": "23#", "notes": "" },
-                    { "id": 148, "name": "破电板", "attrs": "75", "price": "23#", "notes": "" },
-                    { "id": 149, "name": "UGC", "attrs": "30+MF", "price": "22#", "notes": "" },
-                    { "id": 150, "name": "USC", "attrs": "20/12/8", "price": "25#", "notes": "" },
-                    { "id": 151, "name": "USC", "attrs": "20/11/8", "price": "25#", "notes": "" },
-                    { "id": 152, "name": "USC", "attrs": "19/15/5", "price": "24#", "notes": "" },
-                    { "id": 153, "name": "USC", "attrs": "18/20/6", "price": "24#", "notes": "" },
-                    { "id": 154, "name": "USC", "attrs": "18/14/5", "price": "23#", "notes": "" },
-                    { "id": 155, "name": "USC", "attrs": "垃圾", "price": "22#", "notes": "" },
-                    { "id": 156, "name": "战旅 (卓越之刃)", "attrs": "50MF", "price": "31#或30#", "notes": "" },
-                    { "id": 157, "name": "战旅 (卓越之刃)", "attrs": "49mf, 无形, 12耐久", "price": "20# (1紫)", "notes": "" },
-                    { "id": 158, "name": "运气守护 (锁甲手套)", "attrs": "28ed, 38mf", "price": "未知", "notes": "" },
-                    { "id": 159, "name": "安置手", "attrs": "", "price": "未知", "notes": "" },
-                    { "id": 160, "name": "无毛水晶剑精神", "attrs": "29fcr", "price": "未知", "notes": "" },
-                    { "id": 161, "name": "蛮子战斗技能板", "attrs": "+1max", "price": "未知", "notes": "" },
-                    { "id": 162, "name": "被动技能板", "attrs": "+4力量", "price": "未知", "notes": "" },
-                    { "id": 163, "name": "SC", "attrs": "19生命", "price": "未知", "notes": "" },
-                    { "id": 164, "name": "矮人之星 (戒指)", "attrs": "", "price": "未知", "notes": "没了" },
-                    { "id": 165, "name": "乌鸦之霜 (戒指)", "attrs": "", "price": "未知", "notes": "没了" },
-                    { "id": 166, "name": "死灵召唤技能板", "attrs": "+1max", "price": "未知", "notes": "没了" },
-                    { "id": 167, "name": "德元素技能板", "attrs": "+5生命", "price": "未知", "notes": "没了" },
-                    { "id": 168, "name": "SC", "attrs": "3max, 19AR", "price": "未知", "notes": "没了" },
-                    { "id": 169, "name": "SC", "attrs": "12生命, 10冰抗", "price": "未知", "notes": "没了" },
-                    { "id": 170, "name": "GC", "attrs": "45生命, 48法力", "price": "未知", "notes": "没了" },
-                    { "id": 171, "name": "GC", "attrs": "1变形, 29EG", "price": "未知", "notes": "没了" },
-                    { "id": 172, "name": "魔免板", "attrs": "-49%", "price": "22#=3紫", "notes": "" },
-                    { "id": 173, "name": "毒免板", "attrs": "-70%", "price": "23#=5紫", "notes": "满" },
-                    { "id": 174, "name": "UGC", "attrs": "15%降低价格", "price": "22#=3紫", "notes": "" },
-                    { "id": 175, "name": "UGC", "attrs": "34%MF", "price": "23#=5紫", "notes": "" },
-                    { "id": 176, "name": "1刺客武学 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
-                    { "id": 177, "name": "1刺客陷阱 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 178, "name": "1圣骑士攻击灵气 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 179, "name": "1亚马逊标枪 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
-                    { "id": 180, "name": "1亚马逊弓 GC", "attrs": "", "price": "21#=1紫", "notes": "" },
-                    { "id": 181, "name": "1死灵毒骨/16%EG GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 182, "name": "1野蛮人战斗 GC", "attrs": "", "price": "21#=1紫", "notes": "" },
-                    { "id": 183, "name": "1德鲁伊元素 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
-                    { "id": 184, "name": "39%EG/18%火炕 GC", "attrs": "", "price": "22#=3紫", "notes": "送39%EG" },
-                    { "id": 185, "name": "6敏捷/28%火抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 186, "name": "6敏捷/28%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 187, "name": "6力量/27%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 188, "name": "12%FHR/51法力 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 189, "name": "全抗13 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 190, "name": "毁灭", "attrs": "15/20/10", "price": "25#", "notes": "" },
-                    { "id": 191, "name": "6%MF SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "" },
-                    { "id": 192, "name": "9%冰抗/4%MF SC", "attrs": "M状", "price": "21#=1紫", "notes": "" },
-                    { "id": 193, "name": "4全抗/1-10闪电伤害 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
-                    { "id": 194, "name": "3全抗 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "" },
-                    { "id": 195, "name": "3MAX/19AR SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
-                    { "id": 196, "name": "20生命/4法力 SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "" },
-                    { "id": 197, "name": "18生命/5%寒抗 SC", "attrs": "椭圆状", "price": "21#=1紫紫", "notes": "" },
-                    { "id": 198, "name": "11%火炕 SC/9%EG", "attrs": "椭圆状", "price": "23#=5紫", "notes": "" },
-                    { "id": 199, "name": "11%火炕 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "" },
-                    { "id": 200, "name": "11%冰抗SC", "attrs": "M状", "price": "22#=3紫", "notes": "" },
-                    { "id": 201, "name": "5%打击回复/100毒伤 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
-                    { "id": 202, "name": "5%打击回复/15法力 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
-                    { "id": 203, "name": "5%打击回复/13法力 SC", "attrs": "M状", "price": "22#=3紫", "notes": "" },
-                    { "id": 204, "name": "5%打击回复/10%寒抗 SC", "attrs": "", "price": "22#=3紫", "notes": "送11%寒抗 SC(猫爪状)" }
+                    { "name": "法师火系GC", "attrs": "36生命", "price": "乔", "notes": "新增" },
+                    { "name": "亚马逊标枪GC", "attrs": "12FHR", "price": "罗", "notes": "新增" },
+                    { "name": "法师冰系GC", "attrs": "31生命", "price": "28#", "notes": "" },
+                    { "name": "刺客暗影修行GC", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "亚马逊被动GC", "attrs": "26生命", "price": "24#", "notes": "" },
+                    { "name": "亚马逊被动GC", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "死灵召唤GC", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "死灵召唤GC", "attrs": "38生命", "price": "30#", "notes": "" },
+                    { "name": "认证巴尔GC", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "GC", "attrs": "4R13", "price": "23#", "notes": "" },
+                    { "name": "SC", "attrs": "175PD", "price": "25#", "notes": "" },
+                    { "name": "破免板 (破毒)", "attrs": "70%", "price": "25#", "notes": "" },
+                    { "name": "破免板 (破电)", "attrs": "70%", "price": "30#", "notes": "" },
+                    { "name": "破免板 (破冰)", "attrs": "75%", "price": "3紫", "notes": "" },
+                    { "name": "破免板 (破冰)", "attrs": "78%", "price": "2紫", "notes": "" },
+                    { "name": "破冰板", "attrs": "77", "price": "23#", "notes": "" },
+                    { "name": "破电板", "attrs": "75", "price": "23#", "notes": "" },
+                    { "name": "UGC", "attrs": "30+MF", "price": "22#", "notes": "" },
+                    { "name": "USC", "attrs": "20/12/8", "price": "25#", "notes": "" },
+                    { "name": "USC", "attrs": "20/11/8", "price": "25#", "notes": "" },
+                    { "name": "USC", "attrs": "19/15/5", "price": "24#", "notes": "" },
+                    { "name": "USC", "attrs": "18/20/6", "price": "24#", "notes": "" },
+                    { "name": "USC", "attrs": "18/14/5", "price": "23#", "notes": "" },
+                    { "name": "USC", "attrs": "垃圾", "price": "22#", "notes": "" },
+                    { "name": "战旅 (卓越之刃)", "attrs": "50MF", "price": "31#或30#", "notes": "" },
+                    { "name": "战旅 (卓越之刃)", "attrs": "49mf, 无形, 12耐久", "price": "20# (1紫)", "notes": "" },
+                    { "name": "运气守护 (锁甲手套)", "attrs": "28ed, 38mf", "price": "未知", "notes": "" },
+                    { "name": "安置手", "attrs": "", "price": "未知", "notes": "" },
+                    { "name": "无毛水晶剑精神", "attrs": "29fcr", "price": "未知", "notes": "" },
+                    { "name": "蛮子战斗技能板", "attrs": "+1max", "price": "未知", "notes": "" },
+                    { "name": "被动技能板", "attrs": "+4力量", "price": "未知", "notes": "" },
+                    { "name": "SC", "attrs": "19生命", "price": "未知", "notes": "" },
+                    { "name": "矮人之星 (戒指)", "attrs": "", "price": "未知", "notes": "没了" },
+                    { "name": "乌鸦之霜 (戒指)", "attrs": "", "price": "未知", "notes": "没了" },
+                    { "name": "死灵召唤技能板", "attrs": "+1max", "price": "未知", "notes": "没了" },
+                    { "name": "德元素技能板", "attrs": "+5生命", "price": "未知", "notes": "没了" },
+                    { "name": "SC", "attrs": "3max, 18AR", "price": "未知", "notes": "没了" },
+                    { "name": "SC", "attrs": "12生命, 10冰抗", "price": "未知", "notes": "没了" },
+                    { "name": "GC", "attrs": "45生命, 48法力", "price": "未知", "notes": "没了" },
+                    { "name": "GC", "attrs": "1变形, 29EG", "price": "未知", "notes": "没了" },
+                    { "name": "魔免板", "attrs": "-49%", "price": "22#=3紫", "notes": "" },
+                    { "name": "毒免板", "attrs": "-70%", "price": "23#=5紫", "notes": "满" },
+                    { "name": "UGC", "attrs": "15%降低价格", "price": "22#=3紫", "notes": "" },
+                    { "name": "UGC", "attrs": "34%MF", "price": "23#=5紫", "notes": "" },
+                    { "name": "1刺客武学 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "1刺客陷阱 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "1圣骑士攻击灵气 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "1亚马逊标枪 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "1亚马逊弓 GC", "attrs": "", "price": "21#=1紫", "notes": "" },
+                    { "name": "1死灵毒骨/16%EG GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "1野蛮人战斗 GC", "attrs": "", "price": "21#=1紫", "notes": "" },
+                    { "name": "1德鲁伊元素 GC", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "39%EG/18%火炕 GC", "attrs": "", "price": "22#=3紫", "notes": "送39%EG" },
+                    { "name": "6敏捷/28%火抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "6敏捷/28%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "6力量/27%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "12%FHR/51法力 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "全抗13 GC", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "毁灭", "attrs": "15/20/10", "price": "25#", "notes": "" },
+                    { "name": "6%MF SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "" },
+                    { "name": "9%冰抗/4%MF SC", "attrs": "M状", "price": "21#=1紫", "notes": "" },
+                    { "name": "4全抗/1-10闪电伤害 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
+                    { "name": "3全抗 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "" },
+                    { "name": "3MAX/19AR SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
+                    { "name": "20生命/4法力 SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "" },
+                    { "name": "18生命/5%寒抗 SC", "attrs": "椭圆状", "price": "21#=1紫紫", "notes": "" },
+                    { "name": "11%火炕 SC/9%EG", "attrs": "椭圆状", "price": "23#=5紫", "notes": "" },
+                    { "name": "11%火炕 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "" },
+                    { "name": "11%冰抗SC", "attrs": "M状", "price": "22#=3紫", "notes": "" },
+                    { "name": "5%打击回复/100毒伤 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
+                    { "name": "5%打击回复/15法力 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "" },
+                    { "name": "5%打击回复/13法力 SC", "attrs": "M状", "price": "22#=3紫", "notes": "" },
+                    { "name": "5%打击回复/10%寒抗 SC", "attrs": "", "price": "22#=3紫", "notes": "送11%寒抗 SC(猫爪状)" }
                 ],
                 "符文之语和洗点": [
-                    { "id": 205, "name": "符文", "attrs": "22#-29#", "price": "接受30#或31#换零钱", "notes": "", "highlight": true },
-                    { "id": 206, "name": "4套战争召唤", "attrs": "不带15#", "price": "30#", "notes": "剩2组", "highlight": true },
-                    { "id": 207, "name": "10套精神", "attrs": "不带15#", "price": "25#", "notes": "没了", "highlight": true },
-                    { "id": 208, "name": "10套眼光", "attrs": "不带15#", "price": "25#", "notes": "剩1组", "highlight": true },
-                    { "id": 209, "name": "5套治愈", "attrs": "不带15#", "price": "24#", "notes": "剩2组", "highlight": true }
+                    { "name": "符文", "attrs": "22#-29#", "price": "接受30#或31#换零钱", "notes": "", "highlight": true },
+                    { "name": "4套战争召唤", "attrs": "不带15#", "price": "30#", "notes": "剩2组", "highlight": true },
+                    { "name": "10套精神", "attrs": "不带15#", "price": "25#", "notes": "没了", "highlight": true },
+                    { "name": "10套眼光", "attrs": "不带15#", "price": "25#", "notes": "剩1组", "highlight": true },
+                    { "name": "5套治愈", "attrs": "不带15#", "price": "24#", "notes": "剩2组", "highlight": true }
                 ],
                 "底材类": [
-                    { "id": 210, "name": "2孔 抛光魔杖", "attrs": "3骨矛", "price": "23#=5紫", "notes": "", "highlight": true },
-                    { "id": 211, "name": "4孔 3标枪技能 女杰长矛", "attrs": "", "price": "23#=5紫", "notes": "", "highlight": true },
-                    { "id": 212, "name": "12%ED 无形 冥河之枪", "attrs": "", "price": "26#", "notes": "任务打孔4孔", "highlight": true },
-                    { "id": 213, "name": "5%ED/1AR 无形 冥河之枪", "attrs": "", "price": "25#", "notes": "任务打孔4孔" },
-                    { "id": 214, "name": "4孔 无形 冥河之枪", "attrs": "", "price": "24#", "notes": "" },
-                    { "id": 215, "name": "4孔 镰刀", "attrs": "", "price": "22#=3紫", "notes": "" },
-                    { "id": 216, "name": "4孔 6%ED/1AR" }
+                    { "name": "2孔 抛光魔杖", "attrs": "3骨矛", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "4孔 3标枪技能 女杰长矛", "attrs": "", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "12%ED 无形 冥河之枪", "attrs": "", "price": "26#", "notes": "任务打孔4孔", "highlight": true },
+                    { "name": "5%ED/1AR 无形 冥河之枪", "attrs": "", "price": "25#", "notes": "任务打孔4孔" },
+                    { "name": "4孔 无形 冥河之枪", "attrs": "", "price": "24#", "notes": "" },
+                    { "name": "4孔 镰刀", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "4孔 6%ED/1AR 3标枪技能 女战长枪", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "15%ED/3AR 无形 水晶剑", "attrs": "", "price": "26#", "notes": "", "highlight": true },
+                    { "name": "5孔 水晶剑", "attrs": "带毛", "price": "23#=5紫", "notes": "" },
+                    { "name": "5孔 幻化之刃", "attrs": "", "price": "22#=3紫", "notes": "有2把" },
+                    { "name": "4孔 无形 巨神刃", "attrs": "", "price": "22#=3紫", "notes": "誓约" },
+                    { "name": "5孔 无形 双头斧", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "4孔 9蛋 法杖", "attrs": "3能量护盾", "price": "22#=3紫", "notes": "" },
+                    { "name": "4孔 15%ED 刀锋弓", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "13%ED/3AR 4孔 圣教军长弓", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "15%ED/11%NJ 圣甲虫甲", "attrs": "", "price": "22#=3紫", "notes": "546防御" },
+                    { "name": "3孔 15%ED/14%NJ 钢线毛皮甲", "attrs": "", "price": "31#", "notes": "554防御", "highlight": true },
+                    { "name": "3孔 无形 神&sheng*战&甲", "attrs": "中甲", "price": "23#", "notes": "832防御" },
+                    { "name": "4孔 14%ED 绵羊毛皮甲", "attrs": "轻甲", "price": "21#=1紫", "notes": "536防御" },
+                    { "name": "无形 地狱锻甲", "attrs": "重甲", "price": "23#=5紫", "notes": "772防御" },
+                    { "name": "无形 海怪之壳", "attrs": "中甲", "price": "24#", "notes": "760防御" },
+                    { "name": "无形 骸骨网甲", "attrs": "中甲", "price": "23#=5紫", "notes": "742防御" },
+                    { "name": "无形 漆甲", "attrs": "中甲", "price": "22#=3紫", "notes": "703防御" },
+                    { "name": "无形 恶魔头骨", "attrs": "", "price": "23#=3紫", "notes": "198防" },
+                    { "name": "无形 权冠", "attrs": "", "price": "22#=3紫", "notes": "76防" },
+                    { "name": "涡旋盾", "attrs": "44抗", "price": "24#", "notes": "", "highlight": true },
+                    { "name": "涡旋盾", "attrs": "41抗", "price": "22#=3紫", "notes": "" },
+                    { "name": "15%ED 君主盾", "attrs": "", "price": "31#", "notes": "171防御", "highlight": true },
+                    { "name": "3孔 10%ED 君主盾", "attrs": "", "price": "23#=5紫", "notes": "163防御" },
+                    { "name": "4孔 君主盾", "attrs": "", "price": "22#=3紫", "notes": "有2个" },
+                    { "name": "3孔 神*圣*小盾", "attrs": "58%伤害加强/107AR", "price": "25#", "notes": "", "highlight": true }
                 ],
                 "套装": [
-                    { "id": 217, "name": "塔拉夏套装", "attrs": "全套", "price": "26#", "notes": "" },
-                    { "id": 218, "name": "不朽之王套装", "attrs": "全套", "price": "23#", "notes": "" }
+                    { "name": "塔拉夏守护 (漆甲)", "attrs": "900+DEF", "price": "25#", "notes": "" },
+                    { "name": "塔拉夏头盔", "attrs": "一般", "price": "1紫", "notes": "" },
+                    { "name": "塔拉夏杖子", "attrs": "2冰掌握", "price": "22#", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "一般", "price": "20#", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "14%MF", "price": "1紫", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "15%MF", "price": "23#或5紫", "notes": "" },
+                    { "name": "CB头 (吉永之脸)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "圣骑士套装头 (加倍)", "attrs": "24MF", "price": "22#", "notes": "" },
+                    { "name": "死灵套装 (骨毒面具/骨毒之盾/骨毒之索)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "手掌安置", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "按手礼（安置手）", "attrs": "87防御满防御", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "按手礼（安置手）", "attrs": "80防御", "price": "20#=1紫", "notes": "" },
+                    { "name": "塔格奥 手套", "attrs": "67防", "price": "22#=3紫", "notes": "" },
+                    { "name": "娜塔亚 衣服", "attrs": "3孔，616防御，188DEF", "price": "22#=3紫", "notes": "" },
+                    { "name": "马维娜 腰带", "attrs": "86满防", "price": "22#=3紫", "notes": "" },
+                    { "name": "马维娜 头", "attrs": "208防", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人头（不朽之王的意志）", "attrs": "172防，36MF", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人鞋（不朽之王之柱）", "attrs": "128满防御", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人武器（不朽之王的碎魂者）", "attrs": "38%CB", "price": "22#=3紫", "notes": "" },
+                    { "name": "艾尔多头", "attrs": "50冰抗满", "price": "21#=2紫", "notes": "" },
+                    { "name": "温达的全灵 头盔", "attrs": "209满防御", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "死亡套装之腰带", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "门徒 护身符", "attrs": "", "price": "23#", "notes": "" }
                 ],
                 "其他类": [
-                    { "id": 219, "name": "各种符文", "attrs": "22# 到 29#", "price": "未知", "notes": "" },
-                    { "id": 220, "name": "乔丹之石", "attrs": "戒指", "price": "27#", "notes": "" }
+                    { "name": "12%ED/10最小/2敏捷/30火炕 红猪", "attrs": "", "price": "28#", "notes": "37级" },
+                    { "name": "29%火炕/5力量/2max 蓝猪", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "34%伤害强化/8敏捷 白猪", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "-15%需求/30%ED 紫猪", "attrs": "", "price": "22#=3紫", "notes": "", "highlight": true },
+                    { "name": "7%FHR/14MAX 白猪", "attrs": "", "price": "23#=5紫", "notes": "" },
+                    { "name": "A4精华", "attrs": "x10", "price": "22#（3紫）", "notes": "可以按10：1比例换A5精华，1：1比例换A1/A2精华" },
+                    { "name": "泰坦的复仇 标枪", "attrs": "185%ED，7%LL", "price": "22#=3紫", "notes": "" },
+                    { "name": "GLF", "attrs": "-15电抗/+15电伤/130防御", "price": "28#", "notes": "高性价比", "highlight": true },
+                    { "name": "奇拉", "attrs": "69全抗", "price": "24#", "notes": "" },
+                    { "name": "饰金盾", "attrs": "162%ED", "price": "24#", "notes": "" },
+                    { "name": "魔胎", "attrs": "193%ED", "price": "23#=5紫", "notes": "" },
+                    { "name": "魔胎", "attrs": "190%ED", "price": "23#=5紫", "notes": "" },
+                    { "name": "魔胎", "attrs": "162%ED", "price": "22#=3紫", "notes": "" },
+                    { "name": "法拳", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "心结物免腰带", "attrs": "11%DR，39VIT，100%ED", "price": "21#=1紫", "notes": "" },
+                    { "name": "穿刺腰带", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "地狱阔步", "attrs": "70%满EG，145%ED", "price": "23#=5紫", "notes": "" },
+                    { "name": "猫眼", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "亚特玛的圣甲虫 护身符", "attrs": "", "price": "22#=3紫", "notes": "" },
+                ],
+                "套装": [
+                    { "name": "塔拉夏守护 (漆甲)", "attrs": "900+DEF", "price": "25#", "notes": "" },
+                    { "name": "塔拉夏头盔", "attrs": "一般", "price": "1紫", "notes": "" },
+                    { "name": "塔拉夏杖子", "attrs": "2冰掌握", "price": "22#", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "一般", "price": "20#", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "14%MF", "price": "1紫", "notes": "" },
+                    { "name": "塔拉夏腰带", "attrs": "15%MF", "price": "23#或5紫", "notes": "" },
+                    { "name": "CB头 (吉永之脸)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "圣骑士套装头 (加倍)", "attrs": "24MF", "price": "22#", "notes": "" },
+                    { "name": "死灵套装 (骨毒面具/骨毒之盾/骨毒之索)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "手掌安置", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "按手礼（安置手）", "attrs": "87防御满防御", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "按手礼（安置手）", "attrs": "80防御", "price": "20#=1紫", "notes": "" },
+                    { "name": "塔格奥 手套", "attrs": "67防", "price": "22#=3紫", "notes": "" },
+                    { "name": "娜塔亚 衣服", "attrs": "3孔，616防御，188DEF", "price": "22#=3紫", "notes": "" },
+                    { "name": "马维娜 腰带", "attrs": "86满防", "price": "22#=3紫", "notes": "" },
+                    { "name": "马维娜 头", "attrs": "208防", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人头（不朽之王的意志）", "attrs": "172防，36MF", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人鞋（不朽之王之柱）", "attrs": "128满防御", "price": "22#=3紫", "notes": "" },
+                    { "name": "野蛮人武器（不朽之王的碎魂者）", "attrs": "38%CB", "price": "22#=3紫", "notes": "" },
+                    { "name": "艾尔多头", "attrs": "50冰抗满", "price": "21#=2紫", "notes": "" },
+                    { "name": "温达的全灵 头盔", "attrs": "209满防御", "price": "23#=5紫", "notes": "", "highlight": true },
+                    { "name": "死亡套装之腰带", "attrs": "", "price": "22#=3紫", "notes": "" },
+                    { "name": "门徒 护身符", "attrs": "", "price": "23#", "notes": "" }
+                ],
+                "杂货/其他": [
+                    { "name": "A5精华", "attrs": "换其他精华", "price": "1:10", "notes": "" },
+                    { "name": "A5钥匙", "attrs": "换A2钥匙", "price": "3:2", "notes": "" },
+                    { "name": "传送杖 (tp杖)", "attrs": "", "price": "2紫", "notes": "" },
+                    { "name": "收符文", "attrs": "10个8# + 10个11#", "price": "24#", "notes": "新增" },
+                    { "name": "A4精华", "attrs": "x10", "price": "22#（3紫）", "notes": "可以按10：1比例换A5精华，1：1比例换A1/A2精华" }
+                ],
+                "其他": [
+                    { "name": "泰坦的复仇 (礼仪标枪)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "碧蓝怒火 (幻化之刃)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "李奥瑞克王 (古墓魔杖)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "骨寸断 (三尖枪)", "attrs": "189ED, 无形", "price": "25#", "notes": "" },
+                    { "name": "ali88 (地狱之口) 圆月弯刀", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "绝命庇护 (庇护弓)", "attrs": "5导引箭", "price": "22#", "notes": "" },
+                    { "name": "巫师之刺 (骸骨小刀)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "死亡尖钻 (战斗飞镖)", "attrs": "170ED, 无形", "price": "23#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "202ED, 13LL", "price": "22#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "212ED, 14LL", "price": "22#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "230ED, 14LL", "price": "23#", "notes": "" },
+                    { "name": "死神丧钟 (斩镰)", "attrs": "240ED, 12LL, 无形", "price": "60# (30# * 2)", "notes": "" },
+                    { "name": "高祖 (巨神之刃)", "attrs": "161ED", "price": "22#", "notes": "" },
+                    { "name": "盗墓者", "attrs": "3孔", "price": "22#", "notes": "" },
+                    { "name": "无形脾气 (狂乱斧)", "attrs": "3技能, 20%电抗, 19%火抗", "price": "2*30#", "notes": "" },
+                    { "name": "蚀肉骑士 (食肉骑士)", "attrs": "200ed, 未升级", "price": "30#", "notes": "" },
+                    { "name": "死神之深度 (死冰棒)", "attrs": "29%冰伤", "price": "30#", "notes": "" },
+                    { "name": "巨角治愈头盔", "attrs": "460DEF", "price": "28#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 17敏捷, 无形, 200DEF", "price": "23#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "1技能, 20敏捷, 91ED", "price": "24#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 22敏捷, 99ED", "price": "28#", "notes": "" },
+                    { "name": "影舞者 (勇士护胫)", "attrs": "2技能, 25敏捷", "price": "30#", "notes": "" },
+                    { "name": "水上漂 (鲨皮之靴)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "沙暴鞋", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "骨髓行走 (骸骨网靴)", "attrs": "2技能", "price": "22#", "notes": "" },
+                    { "name": "纱织 (铁网靴)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "8LL, 29STR, 141ED", "price": "24#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "10LL, 25STR, 142ED", "price": "24#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "9LL, 29STR, 135ED", "price": "25#", "notes": "" },
+                    { "name": "安达利尔的容貌", "attrs": "无形", "price": "28#", "notes": "" },
+                    { "name": "夜翼面纱", "attrs": "9%冰伤, 17敏捷", "price": "23#", "notes": "" },
+                    { "name": "奇拉守护 (头冠)", "attrs": "4R6X", "price": "23#", "notes": "" },
+                    { "name": "奇拉守护 (头冠)", "attrs": "4R70", "price": "24#", "notes": "" },
+                    { "name": "加尔长发 (狼头)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "巨骷髅 (骸骨面罩)", "attrs": "2孔, 29+STR", "price": "22#", "notes": "" },
+                    { "name": "钢影 (覆颊盔)", "attrs": "11吸火", "price": "22#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "3X/14", "price": "23#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "38/15", "price": "24#", "notes": "" },
+                    { "name": "110物免腰带 (吸血圣王之圈)", "attrs": "39VIT, 14DR", "price": "23#", "notes": "" },
+                    { "name": "长串之耳 (魔皮束带)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "穿刺腰带", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "碎钢 (巨魔护手)", "attrs": "32ED, 17力量", "price": "24#", "notes": "" },
+                    { "name": "地狱之口 (吸火手套)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "运气守护 (锁甲手套)", "attrs": "40MF", "price": "24#", "notes": "新增" },
+                    { "name": "运气守护 (锁甲手套)", "attrs": "35+MF", "price": "22#", "notes": "" },
+                    { "name": "卓古拉之握 (手套)", "attrs": "9LL, 11STR", "price": "22#", "notes": "" },
+                    { "name": "卓古拉之握 (手套)", "attrs": "9LL, 13STR", "price": "23#", "notes": "" },
+                    { "name": "法师之拳 (手套)", "attrs": "", "price": "21#", "notes": "" },
+                    { "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R2X", "price": "21#", "notes": "" },
+                    { "name": "蛇魔法师之皮 (海蛇皮甲)", "attrs": "4R3X", "price": "23#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "3火球", "price": "24#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "3冰霜新星", "price": "24#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "15%电直伤", "price": "30#", "notes": "" },
+                    { "name": "奥玛斯长袍", "attrs": "15%电新星", "price": "30#", "notes": "" },
+                    { "name": "诗蔻蒂的愤怒 (赤褐战甲)", "attrs": "200ED", "price": "23#", "notes": "" },
+                    { "name": "督瑞尔的壳 (护胸甲)", "attrs": "一般", "price": "21#", "notes": "" },
+                    { "name": "物免盾 (骨盾)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "警戒之墙", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "骨焰 (魅魔颅骨)", "attrs": "3技能, 24抗性", "price": "24#", "notes": "" },
+                    { "name": "技能腰带 (蜘蛛之网)", "attrs": "", "price": "25#", "notes": "新增" },
+                    { "name": "猫眼 (项链)", "attrs": "", "price": "22#", "notes": "" },
+                    { "name": "项链", "attrs": "3陷阱/3战吼", "price": "22#", "notes": "" },
+                    { "name": "项链", "attrs": "3武学, 95生命", "price": "25#", "notes": "" },
+                    { "name": "乔丹之石 (戒指)", "attrs": "", "price": "27#", "notes": "" },
+                    { "name": "鬼火投射者 (戒指)", "attrs": "18电吸, 10MF", "price": "24#", "notes": "" },
+                    { "name": "鬼火投射者 (戒指)", "attrs": "15%吸电, 14%电伤", "price": "27#", "notes": "" },
+                    { "name": "矮人之星 (戒指)", "attrs": "一般", "price": "22#", "notes": "" },
+                    { "name": "矮人之星 (戒指)", "attrs": "极品", "price": "23#", "notes": "" },
+                    { "name": "乌鸦之霜 (戒指)", "attrs": "212AR, 20敏捷", "price": "24#", "notes": "" },
+                    { "name": "拿各 (戒指)", "attrs": "29MF", "price": "22#", "notes": "" },
+                    { "name": "腐肉之风 (戒指)", "attrs": "9LL", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-5/+5", "price": "30#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-5/+4", "price": "27#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-4/+4", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (电)", "attrs": "-3/+5", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (冰)", "attrs": "-3/+4", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (冰)", "attrs": "-4/+4", "price": "23#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+3", "price": "21#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+4", "price": "21#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-3/+5", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-5/+3", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-4/+4", "price": "22#", "notes": "" },
+                    { "name": "死亡之珠 (毒)", "attrs": "-5/+5", "price": "26#", "notes": "" },
+                    { "name": "死亡之珠 (火)", "attrs": "-3/+4", "price": "21#", "notes": "" },
+                    { "name": "法师火炬", "attrs": "11/15", "price": "28#", "notes": "" },
+                    { "name": "鳗鱼头 (权冠)", "attrs": "", "price": "30#", "notes": "" },
+                    { "name": "格里芬之眼 (权冠)", "attrs": "", "price": "28#", "notes": "" }
                 ]
             };
 
-            const pgExchangeRates = {
-                "20": 1, "21": 2, "22": 3, "23": 5, "24": 7,
-                "25": 10, "26": 12, "27": 15, "28": 20, "29": 25,
-                "30": 30, "31": 40, "32": 50, "33": 60
+            const categories = ["毁灭", "暗金武器", "暗金防具", "首饰/珠宝", "黄/蓝装类", "技能板/护身符", "符文之语和洗点", "底材类", "套装", "杂货/其他", "其他类"];
+            let currentCategory = "毁灭";
+            let showHighlightedOnly = false;
+            let currentSearchTerm = "";
+
+            const categoryNav = document.getElementById("category-nav");
+            const itemList = document.getElementById("item-list");
+            const sectionTitle = document.getElementById("section-title");
+            const itemSearch = document.getElementById("item-search");
+            const highlightToggle = document.getElementById("highlight-toggle");
+            const noResults = document.getElementById("no-results");
+            const modal = document.getElementById("item-modal");
+            const closeModal = document.getElementById("close-modal");
+            const modalItemName = document.getElementById("modal-item-name");
+            const modalItemAttrs = document.getElementById("modal-item-attrs");
+            const modalItemPrice = document.getElementById("modal-item-price");
+            const modalItemNotes = document.getElementById("modal-item-notes");
+
+            const runeSelect = document.getElementById('rune-select');
+            const pgOutput = document.getElementById('pg-output');
+            const exchangeRates = {
+                '20': '1 紫',
+                '21': '2 紫',
+                '22': '3 紫',
+                '23': '5 紫',
+                '24': '8 紫'
             };
 
-            let currentCategory = "毁灭";
-            let lastUsedId = 220;
-            let editingItemId = null;
-            let editingItemCategory = null;
+            const priceData = {};
+            const itemPrices = [];
+            for (const category in data) {
+                data[category].forEach(item => {
+                    const priceMatch = item.price.match(/(\d+)#/);
+                    if (priceMatch) {
+                        const price = parseInt(priceMatch[1]);
+                        itemPrices.push(price);
+                    }
+                });
+            }
 
-            const itemListEl = document.getElementById('item-list');
-            const navButtons = document.querySelectorAll('.nav-button');
-            const sectionTitleEl = document.getElementById('section-title');
-            const searchInput = document.getElementById('item-search');
-            const highlightToggle = document.getElementById('highlight-toggle');
-            const pgOutputEl = document.getElementById('pg-output');
-            const runeSelectEl = document.getElementById('rune-select');
-            const manualRuneInput = document.getElementById('manual-rune');
-            const manualPgInput = document.getElementById('manual-pg');
-            const itemModal = document.getElementById('item-modal');
-            const closeModalBtn = document.getElementById('close-modal');
-            const editModal = document.getElementById('edit-modal');
-            const closeEditModalBtn = document.getElementById('close-edit-modal');
-            const editForm = document.getElementById('edit-form');
-            const deleteBtn = document.getElementById('delete-btn');
+            itemPrices.sort((a, b) => a - b);
+            
+            itemPrices.forEach(price => {
+                priceData[price] = (priceData[price] || 0) + 1;
+            });
 
-            let priceDistributionChart, runeExchangeChart;
+            const priceLabels = Object.keys(priceData).sort((a,b) => a-b);
+            const priceValues = priceLabels.map(label => priceData[label]);
 
-            function renderItems(category) {
-                const items = data[category];
-                const searchText = searchInput.value.toLowerCase();
-                const showHighlightsOnly = highlightToggle.checked;
-                let filteredItems = items;
-
-                // Apply search filter
-                if (searchText) {
-                    filteredItems = filteredItems.filter(item =>
-                        item.name.toLowerCase().includes(searchText) ||
-                        item.attrs.toLowerCase().includes(searchText) ||
-                        item.price.toLowerCase().includes(searchText) ||
-                        item.notes.toLowerCase().includes(searchText)
-                    );
+            // Chart for Price Distribution
+            const priceDistributionCtx = document.getElementById('priceDistributionChart').getContext('2d');
+            const priceDistributionChart = new Chart(priceDistributionCtx, {
+                type: 'bar',
+                data: {
+                    labels: priceLabels,
+                    datasets: [{
+                        label: '物品数量',
+                        data: priceValues,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '数量' }
+                        },
+                        x: {
+                            title: { display: true, text: '符文价格 (#)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
                 }
+            });
 
-                // Apply highlight filter
-                if (showHighlightsOnly) {
+            // Chart for Rune Exchange
+            const runeExchangeCtx = document.getElementById('runeExchangeChart').getContext('2d');
+            const runeExchangeChart = new Chart(runeExchangeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['20# = 1 紫', '21# = 2 紫', '22# = 3 紫', '23# = 5 紫', '24# = 8 紫'],
+                    datasets: [{
+                        label: '兑换比例',
+                        data: [1, 2, 3, 5, 8],
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(34, 197, 94, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(168, 85, 247, 0.7)',
+                            'rgba(244, 63, 94, 0.7)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const renderList = () => {
+                itemList.innerHTML = '';
+                let filteredItems = data[currentCategory] || [];
+
+                if (showHighlightedOnly) {
                     filteredItems = filteredItems.filter(item => item.highlight);
                 }
 
-                itemListEl.innerHTML = '';
+                if (currentSearchTerm) {
+                    const searchTermLower = currentSearchTerm.toLowerCase();
+                    filteredItems = filteredItems.filter(item => 
+                        item.name.toLowerCase().includes(searchTermLower) || 
+                        item.attrs.toLowerCase().includes(searchTermLower) ||
+                        item.notes.toLowerCase().includes(searchTermLower)
+                    );
+                }
+                
                 if (filteredItems.length === 0) {
-                    document.getElementById('no-results').classList.remove('hidden');
+                    noResults.classList.remove('hidden');
                 } else {
-                    document.getElementById('no-results').classList.add('hidden');
+                    noResults.classList.add('hidden');
                     filteredItems.forEach(item => {
-                        const card = document.createElement('div');
-                        const isHighlighted = item.highlight;
-                        card.className = `card-row bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all duration-200 ${isHighlighted ? 'highlighted-item' : ''}`;
-                        card.dataset.itemId = item.id;
-                        card.dataset.category = category;
-
-                        let attrsHtml = item.attrs ? `<p class="text-gray-600 truncate mr-2">${item.attrs}</p>` : '';
-                        let notesHtml = item.notes ? `<p class="text-sm text-gray-500 mt-1 sm:mt-0 sm:ml-2">备注: ${item.notes}</p>` : '';
-                        let highlightTag = isHighlighted ? `<span class="highlighted-tag whitespace-nowrap">重点推荐</span>` : '';
-
-                        card.innerHTML = `
-                            <div class="flex-1 min-w-0 mb-2 sm:mb-0">
-                                <div class="flex items-center space-x-2">
-                                    <h3 class="text-lg font-semibold text-gray-900 truncate">${item.name}</h3>
-                                    ${highlightTag}
+                        const itemCard = document.createElement('div');
+                        itemCard.className = `card-row bg-white rounded-lg p-4 shadow flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 transition-all cursor-pointer ${item.highlight ? 'highlighted-item' : ''}`;
+                        
+                        let priceText = item.price;
+                        let notesText = item.notes;
+                        if (notesText === "") {
+                            notesText = "无";
+                        }
+                        
+                        let nameHtml = `<span class="font-medium text-gray-900">${item.name}</span>`;
+                        if (item.highlight) {
+                            nameHtml += ' <span class="highlighted-tag">好货</span>';
+                        }
+                        
+                        itemCard.innerHTML = `
+                            <div class="flex flex-col md:flex-row md:items-center space-x-0 md:space-x-4 w-full">
+                                <div class="w-full md:w-1/3 text-left">
+                                    ${nameHtml}
                                 </div>
-                                <div class="text-sm text-gray-700 flex flex-wrap items-center mt-1">
-                                    ${attrsHtml}
-                                    ${notesHtml}
+                                <div class="w-full md:w-1/2 text-sm text-gray-600 truncate">
+                                    ${item.attrs}
                                 </div>
                             </div>
-                            <div class="flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-2 sm:mt-0">
-                                <span class="font-bold text-red-600 text-lg whitespace-nowrap">${item.price}</span>
-                                <div class="flex space-x-2 mt-2 sm:mt-0">
-                                    <button class="edit-btn text-blue-500 hover:text-blue-700 transition-colors" data-item-id="${item.id}" data-category="${category}">修改</button>
-                                    <button class="delete-btn text-red-500 hover:text-red-700 transition-colors" data-item-id="${item.id}" data-category="${category}">删除</button>
-                                </div>
+                            <div class="flex-shrink-0 w-full md:w-auto text-right">
+                                <span class="text-lg font-bold text-red-600">${priceText}</span>
                             </div>
                         `;
-                        itemListEl.appendChild(card);
-                    });
-
-                    // Add event listeners for edit/delete buttons
-                    document.querySelectorAll('.edit-btn').forEach(button => {
-                        button.addEventListener('click', (event) => {
-                            event.stopPropagation();
-                            const itemId = parseInt(event.target.dataset.itemId, 10);
-                            const category = event.target.dataset.category;
-                            editingItemId = itemId;
-                            editingItemCategory = category;
-                            const item = data[category].find(i => i.id === itemId);
-                            if (item) {
-                                document.getElementById('edit-name').value = item.name;
-                                document.getElementById('edit-attrs').value = item.attrs;
-                                document.getElementById('edit-price').value = item.price;
-                                document.getElementById('edit-notes').value = item.notes;
-                                editModal.style.display = 'flex';
-                            }
+                        itemCard.addEventListener('click', () => {
+                            modalItemName.textContent = item.name;
+                            modalItemAttrs.textContent = item.attrs || '无';
+                            modalItemPrice.textContent = priceText;
+                            modalItemNotes.textContent = notesText;
+                            modal.classList.remove('hidden');
+                            setTimeout(() => {
+                                modal.querySelector('div').classList.remove('scale-95');
+                            }, 10);
                         });
-                    });
-
-                    document.querySelectorAll('.delete-btn').forEach(button => {
-                        button.addEventListener('click', (event) => {
-                            event.stopPropagation();
-                            const itemId = parseInt(event.target.dataset.itemId, 10);
-                            const category = event.target.dataset.category;
-                            if (confirm('确定要删除此交易内容吗？')) {
-                                deleteItem(category, itemId);
-                            }
-                        });
-                    });
-
-                    document.querySelectorAll('.card-row').forEach(card => {
-                         card.addEventListener('click', (event) => {
-                            const itemId = parseInt(event.currentTarget.dataset.itemId, 10);
-                            const category = event.currentTarget.dataset.category;
-                            const item = data[category].find(i => i.id === itemId);
-                            if (item) {
-                                showItemDetails(item);
-                            }
-                        });
+                        itemList.appendChild(itemCard);
                     });
                 }
-                updateCharts();
-            }
+            };
+            
+            closeModal.addEventListener('click', () => {
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            });
 
-            function updateCharts() {
-                const currentData = data[currentCategory];
-                if (!currentData) return;
-
-                const priceCounts = {};
-                currentData.forEach(item => {
-                    const priceMatch = item.price.match(/(\d+)#/) || item.price.match(/(\d+)\*\d+/);
-                    if (priceMatch) {
-                        const price = parseInt(priceMatch[1], 10);
-                        if (price in priceCounts) {
-                            priceCounts[price]++;
-                        } else {
-                            priceCounts[price] = 1;
-                        }
-                    }
-                });
-
-                const labels = Object.keys(priceCounts).sort((a, b) => a - b);
-                const counts = labels.map(label => priceCounts[label]);
-
-                const runeExchangeLabels = ["22#", "23#", "24#", "25#", "26#", "27#", "28#", "29#", "30#", "31#"];
-                const runeExchangeValues = runeExchangeLabels.map(label => {
-                    const runeNum = parseInt(label.replace('#', ''));
-                    return pgExchangeRates[runeNum];
-                });
-
-                if (priceDistributionChart) {
-                    priceDistributionChart.destroy();
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal.click();
                 }
-                priceDistributionChart = new Chart(
-                    document.getElementById('priceDistributionChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: '物品数量',
-                                data: counts,
-                                backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                                borderColor: 'rgba(59, 130, 246, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: '物品数量'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: '价格 (#符文)'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                );
+            });
 
-                if (runeExchangeChart) {
-                    runeExchangeChart.destroy();
-                }
-                runeExchangeChart = new Chart(
-                    document.getElementById('runeExchangeChart'), {
-                        type: 'line',
-                        data: {
-                            labels: runeExchangeLabels,
-                            datasets: [{
-                                label: '紫宝石数量',
-                                data: runeExchangeValues,
-                                fill: false,
-                                borderColor: 'rgb(239, 68, 68)',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: '紫宝石数量'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: '高阶符文'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                );
-            }
-
-            function showItemDetails(item) {
-                document.getElementById('modal-item-name').textContent = item.name;
-                document.getElementById('modal-item-attrs').textContent = item.attrs;
-                document.getElementById('modal-item-price').textContent = item.price;
-                document.getElementById('modal-item-notes').textContent = item.notes;
-                itemModal.style.display = 'flex';
-            }
-
-            function editItem(category, itemId, updatedItem) {
-                const itemIndex = data[category].findIndex(item => item.id === itemId);
-                if (itemIndex > -1) {
-                    // update properties
-                    data[category][itemIndex].name = updatedItem.name;
-                    data[category][itemIndex].attrs = updatedItem.attrs;
-                    data[category][itemIndex].price = updatedItem.price;
-                    data[category][itemIndex].notes = updatedItem.notes;
-                    renderItems(currentCategory);
-                }
-            }
-
-            function deleteItem(category, itemId) {
-                const itemIndex = data[category].findIndex(item => item.id === itemId);
-                if (itemIndex > -1) {
-                    data[category].splice(itemIndex, 1);
-                    renderItems(currentCategory);
-                }
-            }
-
-            // Event Listeners
-            navButtons.forEach(button => {
-                button.addEventListener('click', (event) => {
-                    navButtons.forEach(btn => btn.className = "nav-button bg-white text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-100 transition-colors");
-                    event.target.className = "nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors";
-                    currentCategory = event.target.dataset.category;
-                    sectionTitleEl.textContent = currentCategory;
-                    renderItems(currentCategory);
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    document.querySelectorAll('.nav-button').forEach(btn => {
+                        btn.classList.remove('bg-gray-200', 'text-gray-800', 'font-semibold');
+                        btn.classList.add('bg-white', 'text-gray-700', 'font-medium');
+                    });
+                    e.target.classList.add('bg-gray-200', 'text-gray-800', 'font-semibold');
+                    e.target.classList.remove('bg-white', 'text-gray-700', 'font-medium');
+                    currentCategory = e.target.dataset.category;
+                    sectionTitle.textContent = currentCategory;
+                    renderList();
                 });
             });
 
-            searchInput.addEventListener('input', () => renderItems(currentCategory));
-            highlightToggle.addEventListener('change', () => renderItems(currentCategory));
-
-            runeSelectEl.addEventListener('change', (event) => {
-                const runeValue = event.target.value;
-                const pgValue = pgExchangeRates[runeValue];
-                pgOutputEl.textContent = `${pgValue} 紫`;
+            itemSearch.addEventListener('input', (e) => {
+                currentSearchTerm = e.target.value;
+                renderList();
             });
 
-            manualRuneInput.addEventListener('input', (event) => {
-                const runeValue = parseFloat(event.target.value);
-                if (!isNaN(runeValue)) {
-                    // Simple heuristic for manual conversion
-                    const pgEstimate = Math.round(runeValue * 1.5); // A simple, non-exact formula
-                    manualPgInput.value = pgEstimate;
-                } else {
-                    manualPgInput.value = '';
-                }
+            highlightToggle.addEventListener('change', (e) => {
+                showHighlightedOnly = e.target.checked;
+                renderList();
             });
 
-            manualPgInput.addEventListener('input', (event) => {
-                const pgValue = parseFloat(event.target.value);
-                if (!isNaN(pgValue)) {
-                    // Simple heuristic for manual conversion
-                    const runeEstimate = (pgValue / 1.5).toFixed(1);
-                    manualRuneInput.value = runeEstimate;
-                } else {
-                    manualRuneInput.value = '';
-                }
+            runeSelect.addEventListener('change', (e) => {
+                const selectedRune = e.target.value;
+                pgOutput.textContent = exchangeRates[selectedRune];
             });
 
-            closeModalBtn.addEventListener('click', () => {
-                itemModal.style.display = 'none';
-            });
-
-            closeEditModalBtn.addEventListener('click', () => {
-                editModal.style.display = 'none';
-            });
-            
-            editForm.addEventListener('submit', (event) => {
-                event.preventDefault();
-                const updatedItem = {
-                    name: document.getElementById('edit-name').value,
-                    attrs: document.getElementById('edit-attrs').value,
-                    price: document.getElementById('edit-price').value,
-                    notes: document.getElementById('edit-notes').value
-                };
-                editItem(editingItemCategory, editingItemId, updatedItem);
-                editModal.style.display = 'none';
-            });
-            
-            deleteBtn.addEventListener('click', () => {
-                if (confirm('确定要删除此交易内容吗？')) {
-                    deleteItem(editingItemCategory, editingItemId);
-                    editModal.style.display = 'none';
-                }
-            });
-
-            window.addEventListener('click', (event) => {
-                if (event.target === itemModal) {
-                    itemModal.style.display = 'none';
-                }
-                if (event.target === editModal) {
-                    editModal.style.display = 'none';
-                }
-            });
-            
-            // Initial render
-            renderItems(currentCategory);
+            renderList();
         });
     </script>
 </body>
