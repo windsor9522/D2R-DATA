@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D2R 交易市场 - 互动式物价列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 350px; }
+        }
+        .highlighted-item {
+            border-left: 4px solid #ef4444;
+        }
+        .highlighted-tag {
+            background-color: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .card-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard with a fixed header, a dynamic main content area, and a left-hand sidebar for navigation and tools. The new "Add Item" form has been integrated into the sidebar, alongside the existing search and filter options. This structure allows users to both consume and contribute data from a single, intuitive interface. All dynamic item data, including new user-added items, are displayed in the main content area, which can be filtered and searched. This non-linear design transforms the static source report into a living, user-extensible tool. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Item Categories -> Goal: Organize & Navigate -> Viz/Presentation Method: Sidebar Navigation -> Interaction: Click to filter main list -> Justification: Provides quick, structured access to different item types -> Library/Method: HTML/CSS/JS.
+        - Report Info: User-Added Items -> Goal: Allow direct content input -> Viz/Presentation Method: Form -> Interaction: Fill and submit to add new item -> Justification: Solves a user need for dynamic data contribution -> Library/Method: HTML/CSS/JS.
+        - Report Info: Currency Exchange Rates -> Goal: Provide a quick utility -> Viz/Presentation Method: Interactive Text + Tooltip -> Interaction: Select a rune to see its value in gems -> Justification: Directly solves a user need for price calculation -> Library/Method: HTML/CSS/JS.
+        - Report Info: Distribution of Prices -> Goal: Visualize market structure -> Viz/Presentation Method: Bar Chart -> Interaction: Hover to see item count -> Justification: Offers a high-level market overview not present in the raw data. Note: This chart is based on the initial dataset; a page refresh is needed to reflect new additions -> Library/Method: Chart.js (Canvas).
+        - Report Info: Detailed Item Listings -> Goal: Display item specs & prices -> Viz/Presentation Method: Dynamic List/Cards -> Interaction: Click to view details in a modal -> Justification: Turns a static table into an interactive catalog, improving readability -> Library/Method: HTML/CSS/JS.
+        - Report Info: "重点推荐好货" -> Goal: Highlight key items -> Viz/Presentation Method: Colored Card Border/Tag -> Interaction: Visual cue and filter toggle -> Justification: Draws attention to priority items as per the source report -> Library/Method: HTML/CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+            <div class="container mx-auto flex flex-col md:flex-row items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-900">D2R 交易市场</h1>
+                <div id="seller-info" class="mt-2 md:mt-0 text-sm md:text-base text-gray-600">
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <aside class="bg-white rounded-lg shadow-lg p-6 h-fit md:col-span-1">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">物品类别</h2>
+                <div id="category-nav" class="flex flex-col space-y-2 mb-6">
+                </div>
+
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-2 text-gray-700">搜索 & 筛选</h2>
+                    <input type="text" id="item-search" placeholder="搜索物品名称..." class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                    <div class="mt-4 flex items-center">
+                        <input type="checkbox" id="highlight-toggle" class="form-checkbox h-4 w-4 text-red-600 rounded">
+                        <label for="highlight-toggle" class="ml-2 text-sm text-gray-700 font-medium">只看重点推荐好货</label>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-2 text-gray-700">货币兑换</h2>
+                    <p class="text-sm text-gray-600 mb-2">选择符文查看紫宝石价值</p>
+                    <div class="flex items-center space-x-2">
+                        <select id="rune-select" class="p-2 border rounded-md">
+                            <option value="20">20#</option>
+                            <option value="21">21#</option>
+                            <option value="22">22#</option>
+                            <option value="23">23#</option>
+                            <option value="24">24#</option>
+                        </select>
+                        <span class="text-lg text-gray-600">=</span>
+                        <span id="pg-output" class="font-bold text-blue-600 text-lg">1 紫</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">手动添加物品</h2>
+                    <div class="space-y-4">
+                        <input type="text" id="add-name" placeholder="物品名称" class="w-full p-2 border rounded-md" required>
+                        <input type="text" id="add-attrs" placeholder="属性" class="w-full p-2 border rounded-md">
+                        <input type="text" id="add-price" placeholder="价格 (例: 22#=3紫)" class="w-full p-2 border rounded-md" required>
+                        <input type="text" id="add-notes" placeholder="备注" class="w-full p-2 border rounded-md">
+                        <input type="text" id="add-seller" placeholder="卖家ID" class="w-full p-2 border rounded-md" required>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="add-highlight" class="form-checkbox">
+                            <label for="add-highlight" class="text-sm text-gray-700">重点推荐好货</label>
+                        </div>
+                        <button id="add-item-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">添加物品</button>
+                    </div>
+                    <div id="add-message" class="mt-4 text-center hidden"></div>
+                </div>
+            </aside>
+
+            <section class="md:col-span-3">
+                <h2 id="section-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+                <div id="item-list" class="grid grid-cols-1 gap-4">
+                </div>
+                <div id="no-results" class="hidden mt-8 text-center text-gray-500 text-xl font-medium">
+                    没有找到符合条件的物品。
+                </div>
+            </section>
+
+            <section class="md:col-span-4 mt-8">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">市场数据洞察</h2>
+                <div class="bg-white rounded-lg shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-700">物品价格分布</h3>
+                        <p class="text-sm text-gray-600 mb-4">各价格点（以符文为单位）的物品数量。</p>
+                        <div class="chart-container">
+                            <canvas id="priceDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-700">符文兑换比例</h3>
+                        <p class="text-sm text-gray-600 mb-4">高阶符文与紫宝石的兑换比例。</p>
+                        <div class="chart-container">
+                            <canvas id="runeExchangeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-11/12 transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="modal-item-name" class="text-2xl font-bold text-gray-900"></h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition-colors text-3xl leading-none">&times;</button>
+            </div>
+            <div id="modal-item-details" class="space-y-4 text-gray-700">
+                <p><strong>属性:</strong> <span id="modal-item-attrs"></span></p>
+                <p><strong>价格:</strong> <span id="modal-item-price" class="text-red-600 font-bold"></span></p>
+                <p><strong>备注:</strong> <span id="modal-item-notes"></span></p>
+                <p class="text-sm text-gray-500 mt-4">联系卖家: <span id="modal-seller-id" class="font-mono"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let data = {
+                "符文之语和洗点": [
+                    { "name": "符文", "attrs": "22#-29#", "price": "接受30#或31#换零钱", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "4套战争召唤", "attrs": "不带15#", "price": "30#", "notes": "剩2组", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "10套精神", "attrs": "不带15#", "price": "25#", "notes": "没了", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "10套眼光", "attrs": "不带15#", "price": "25#", "notes": "剩1组", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "5套治愈", "attrs": "不带15#", "price": "24#", "notes": "剩2组", "seller": "BlackWiz#31928", "highlight": true }
+                ],
+                "黄/蓝装类": [
+                    { "name": "【蓝NEC盾牌】", "attrs": "3毒骨技能/2剧毒新星", "price": "30#*2", "notes": "未打孔", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【蓝项链】", "attrs": "3法师闪电技能/10%FCR", "price": "31#*2", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/17%FCR/14法力/8%法力恢复/13%全抗/35%毒抗", "price": "30#*8", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/19%FCR/生命回复7/19法力/5%法力恢复/13%全抗", "price": "30#*4", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/20%FCR/12AR/10法力/4%法力恢复/32%火炕", "price": "30#*3", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2法师/19%FCR/82法力/5%法力恢复", "price": "30#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "2法师/10%FCR/39%寒抗/36%电抗/36%EG", "price": "30#*3", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2亚马逊/19%FCR/18法力/18%电抗/75%毒缩", "price": "30#*2", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2亚马逊/16%FCR/25法力/6%全抗", "price": "28#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【手工项链】", "attrs": "2圣骑士/17%FCR/51生命/18法力/5%法力恢复", "price": "30#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【手工项链】", "attrs": "2死灵/20%FCR/40法力/7%法力恢复/30%电炕", "price": "30#*4", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2死灵/10%FCR/3%法力偷取/9能量/10法力/法力恢复6%", "price": "26#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【手工项链】", "attrs": "2死灵召唤/16%FCR/15法力/法力恢复6%/9%毒抗", "price": "26#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【手工项链】", "attrs": "2刺客/10%FCR/58生命/18法力/5%法力恢复/13%全抗/52%火抗", "price": "30#*6", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工项链】", "attrs": "2刺客武艺/10%FCR/5能量/6生命/15法力/6%法力恢复/8%火炕", "price": "26#", "notes": "52级可用, 低等级马赛克刺客可用", "seller": "BlackWiz#31928" },
+                    { "name": "【手工项链】", "attrs": "2德鲁伊元素/20%FCR/10法力/8%法力恢复/13%全抗/18%毒抗", "price": "31#*2", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄项链/打钱】", "attrs": "1野蛮人/40法力/71%EG/22%MF", "price": "31#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【黄项链/打钱】", "attrs": "1野蛮人/6%偷蓝/30%毒抗/77%EG", "price": "31#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【黄项链】", "attrs": "2刺客/10FCR/10%MF", "price": "23#", "notes": "67级可用, 低等级马赛克刺客可用", "seller": "BlackWiz#31928" },
+                    { "name": "【黄项链】", "attrs": "2刺客/10FCR/6%毒抗/5%MF", "price": "23#", "notes": "67级可用, 低等级马赛克刺客可用", "seller": "BlackWiz#31928" },
+                    { "name": "【黄项链】", "attrs": "1法师闪电/10FCR/47法力/毒抗17%/22%MF", "price": "24#", "notes": "22级可用, 低等级顶球新星法师可用，全部有用", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "(30级PK)2圣骑士战斗/15AR/58生命/43法力/5%毒抗/冰冻减半", "price": "30#*3", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄项链】", "attrs": "(30级PK)2亚马逊被动/10%FCR/14%全抗/32%毒抗", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【黄项链】", "attrs": "(30级PK)1圣骑士/10%FCR/30生命/36法力/31%电抗", "price": "27#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【手工戒指/双吸高力量高法力】", "attrs": "5%LM/3%LL/23力量/10能量/13生命/47法力", "price": "27#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【手工戒指/高吸血/敏捷】", "attrs": "10%LL/4力量/10敏捷/15生命/20法力", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【黄戒指/FCR/高法力/EK】", "attrs": "(30级PK)10%FCR/27AR/13能量/77法力/1DR/1EK", "price": "27#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄戒指/FCR/高AR/偷蓝/法力】", "attrs": "10%FCR/98AR/4%偷蓝/54法力/20%毒抗", "price": "27#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄戒指/敏捷/全抗/偷生命】", "attrs": "5%LL/12DEX/29法力/11全抗/2MDR/8%MF", "price": "25#", "notes": "48级可用", "seller": "BlackWiz#31928" },
+                    { "name": "【黄戒指/PK】", "attrs": "5MIN/118AR/35生命/26%冰抗/21%火炕/生命回复+3", "price": "26#", "notes": "60级可用", "seller": "BlackWiz#31928" },
+                    { "name": "【黄戒指/PK】", "attrs": "71AR/33生命/50法力/5全抗/25%PLR", "price": "24#", "notes": "60级可用", "seller": "BlackWiz#31928" },
+                    { "name": "【黄鞋/高敏/电/火/毒】", "attrs": "30%高跑/9敏捷/26%电抗/26%火炕/34%毒抗/毒缩25%", "price": "4*30#", "notes": "(20力量)魔皮长靴", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "【黄鞋/冰/火/MF】", "attrs": "10%高跑/10%FHR/37%冰抗/40%火炕/10%MF", "price": "25#", "notes": "(50力量需求)轻铠靴", "seller": "BlackWiz#31928" },
+                    { "name": "【黄鞋/冰/火/打钱】", "attrs": "20%高跑/27%冰抗/38%火抗/70%EG/19%MF", "price": "24#", "notes": "无力量需求,重靴", "seller": "BlackWiz#31928" },
+                    { "name": "【黄鞋/电/敏/法力】", "attrs": "20%高跑/6敏捷/36法力/27%电抗/25%毒缩", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "【黄手套】", "attrs": "20IAS/12%电抗/27%火抗/24%MF", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" }
+                ],
+                "底材类": [
+                    { "name": "2孔 抛光魔杖", "attrs": "3骨矛", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "4孔 3标枪技能 女杰长矛", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "12%ED 无形 冥河之枪", "attrs": "", "price": "26#", "notes": "任务打孔4孔", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "5%ED/1AR 无形 冥河之枪", "attrs": "", "price": "25#", "notes": "任务打孔4孔", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 无形 冥河之枪", "attrs": "", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 镰刀", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 6%ED/1AR 3标枪技能 女战长枪", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "15%ED/3AR 无形 水晶剑", "attrs": "", "price": "26#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "5孔 水晶剑", "attrs": "带毛", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "5孔 幻化之刃", "attrs": "", "price": "22#=3紫", "notes": "有2把", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 无形 巨神刃", "attrs": "", "price": "22#=3紫", "notes": "誓约", "seller": "BlackWiz#31928" },
+                    { "name": "5孔 无形 双头斧", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 9蛋 法杖", "attrs": "3能量护盾", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 15%ED 刀锋弓", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "13%ED/3AR 4孔 圣教军长弓", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "15%ED/11%NJ 圣甲虫甲", "attrs": "", "price": "22#=3紫", "notes": "546防御", "seller": "BlackWiz#31928" },
+                    { "name": "3孔 15%ED/14%NJ 钢线毛皮甲", "attrs": "", "price": "31#", "notes": "554防御", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "3孔 无形 神&sheng*战&甲", "attrs": "中甲", "price": "23#", "notes": "832防御", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 14%ED 绵羊毛皮甲", "attrs": "轻甲", "price": "21#=1紫", "notes": "536防御", "seller": "BlackWiz#31928" },
+                    { "name": "无形 地狱锻甲", "attrs": "重甲", "price": "23#=5紫", "notes": "772防御", "seller": "BlackWiz#31928" },
+                    { "name": "无形 海怪之壳", "attrs": "中甲", "price": "24#", "notes": "760防御", "seller": "BlackWiz#31928" },
+                    { "name": "无形 骸骨网甲", "attrs": "中甲", "price": "23#=5紫", "notes": "742防御", "seller": "BlackWiz#31928" },
+                    { "name": "无形 漆甲", "attrs": "中甲", "price": "22#=3紫", "notes": "703防御", "seller": "BlackWiz#31928" },
+                    { "name": "无形 恶魔头骨", "attrs": "", "price": "23#=3紫", "notes": "198防", "seller": "BlackWiz#31928" },
+                    { "name": "无形 权冠", "attrs": "", "price": "22#=3紫", "notes": "76防", "seller": "BlackWiz#31928" },
+                    { "name": "涡旋盾", "attrs": "44抗", "price": "24#", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "涡旋盾", "attrs": "41抗", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "15%ED 君主盾", "attrs": "", "price": "31#", "notes": "171防御", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "3孔 10%ED 君主盾", "attrs": "", "price": "23#=5紫", "notes": "163防御", "seller": "BlackWiz#31928" },
+                    { "name": "4孔 君主盾", "attrs": "", "price": "22#=3紫", "notes": "有2个", "seller": "BlackWiz#31928" },
+                    { "name": "3孔 神*圣*小盾", "attrs": "58%伤害加强/107AR", "price": "25#", "notes": "", "seller": "BlackWiz#31928", "highlight": true }
+                ],
+                "护身符类": [
+                    { "name": "魔免板", "attrs": "-49%", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "毒免板", "attrs": "-70%", "price": "23#=5紫", "notes": "满", "seller": "BlackWiz#31928" },
+                    { "name": "UGC", "attrs": "15%降低价格", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "UGC", "attrs": "34%MF", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1刺客武学 GC", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1刺客陷阱 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1圣骑士攻击灵气 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1亚马逊标枪 GC", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1亚马逊弓 GC", "attrs": "", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1死灵毒骨/16%EG GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1野蛮人战斗 GC", "attrs": "", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "1德鲁伊元素 GC", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "39%EG/18%火炕 GC", "attrs": "", "price": "22#=3紫", "notes": "送39%EG", "seller": "BlackWiz#31928" },
+                    { "name": "6敏捷/28%火抗 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "6敏捷/28%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "6力量/27%毒抗 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "12%FHR/51法力 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "全抗13 GC", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "毁灭", "attrs": "15/20/10", "price": "25#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "6%MF SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "9%冰抗/4%MF SC", "attrs": "M状", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "4全抗/1-10闪电伤害 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "3全抗 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "3MAX/19AR SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "20生命/4法力 SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "18生命/5%寒抗 SC", "attrs": "椭圆状", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "11%火炕 SC/9%EG", "attrs": "椭圆状", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "11%火炕 SC", "attrs": "椭圆状", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "11%冰抗SC", "attrs": "M状", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "5%打击回复/100毒伤 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "5%打击回复/15法力 SC", "attrs": "猫爪状", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "5%打击回复/13法力 SC", "attrs": "M状", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "5%打击回复/10%寒抗 SC", "attrs": "", "price": "22#=3紫", "notes": "送11%寒抗 SC(猫爪状)", "seller": "BlackWiz#31928" }
+                ],
+                "暗金类": [
+                    { "name": "-3/+4 升毒 米猪", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "3技能 艾斯屈塔的愤怒", "attrs": "15%闪电，11%火焰，21ENG", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "无形 4技能 爱针", "attrs": "", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "泰坦的复仇 标枪", "attrs": "185%ED，7%LL", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "GLF", "attrs": "-15电抗/+15电伤/130防御", "price": "28#", "notes": "高性价比", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "奇拉", "attrs": "69全抗", "price": "24# 或 23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "饰金盾", "attrs": "162%ED", "price": "24# 或 23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "魔胎", "attrs": "193%ED", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "魔胎", "attrs": "190%ED", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "魔胎", "attrs": "162%ED", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "法拳", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "心结物免腰带", "attrs": "11%DR，39VIT，100%ED", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "穿刺腰带", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "地狱阔步", "attrs": "70%满EG，145%ED", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "猫眼", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "亚特玛的圣甲虫 护身符", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" }
+                ],
+                "绿装类": [
+                    { "name": "塔拉夏 面具", "attrs": "满防131", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "塔拉夏 面具", "attrs": "", "price": "21#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "塔拉夏 项链", "attrs": "", "price": "24#", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "按手礼（安置手） 手套", "attrs": "87防御满防御", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "按手礼（安置手） 手套", "attrs": "80防御", "price": "20#=1紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "塔格奥 手套", "attrs": "67防", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "娜塔亚 衣服", "attrs": "3孔，616防御，188DEF", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "马维娜 腰带", "attrs": "86满防", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "马维娜 头", "attrs": "208防", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "野蛮人头（不朽之王的意志）", "attrs": "172防，36MF", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "野蛮人鞋（不朽之王之柱）", "attrs": "128满防御", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "野蛮人武器（不朽之王的碎魂者）", "attrs": "38%CB", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "艾尔多头", "attrs": "50冰抗满", "price": "21#=2紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "温达的全灵 头盔", "attrs": "209满防御", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "死亡套装之腰带", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "门徒 护身符", "attrs": "", "price": "23#", "notes": "", "seller": "BlackWiz#31928" }
+                ],
+                "其他类": [
+                    { "name": "12%ED/10最小/2敏捷/30火炕 红猪", "attrs": "", "price": "28#", "notes": "37级", "seller": "BlackWiz#31928" },
+                    { "name": "29%火炕/5力量/2max 蓝猪", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "34%伤害强化/8敏捷 白猪", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "-15%需求/30%ED 紫猪", "attrs": "", "price": "22#=3紫", "notes": "", "seller": "BlackWiz#31928", "highlight": true },
+                    { "name": "7%FHR/14MAX 白猪", "attrs": "", "price": "23#=5紫", "notes": "", "seller": "BlackWiz#31928" },
+                    { "name": "A4精华", "attrs": "*10", "price": "22#（3紫）", "notes": "可以按10：1比例换A5精华，1：1比例换A1/A2精华", "seller": "BlackWiz#31928" }
+                ],
+                "新增物品": []
+            };
+
+            const sellers = [...new Set(Object.values(data).flat().map(item => item.seller))];
+            const sellerInfo = document.getElementById('seller-info');
+            sellerInfo.innerHTML = sellers.map(s => `联系卖家: <span class="font-mono text-gray-900 font-medium">${s}</span>`).join(' | ');
+
+            const categories = Object.keys(data);
+            let currentCategory = categories[0];
+            let showHighlightedOnly = false;
+            let currentSearchTerm = "";
+
+            const categoryNav = document.getElementById("category-nav");
+            const itemList = document.getElementById("item-list");
+            const sectionTitle = document.getElementById("section-title");
+            const itemSearch = document.getElementById("item-search");
+            const highlightToggle = document.getElementById("highlight-toggle");
+            const noResults = document.getElementById("no-results");
+            const modal = document.getElementById("item-modal");
+            const closeModal = document.getElementById("close-modal");
+            const modalItemName = document.getElementById("modal-item-name");
+            const modalItemAttrs = document.getElementById("modal-item-attrs");
+            const modalItemPrice = document.getElementById("modal-item-price");
+            const modalItemNotes = document.getElementById("modal-item-notes");
+            const modalSellerId = document.getElementById("modal-seller-id");
+
+            const runeSelect = document.getElementById('rune-select');
+            const pgOutput = document.getElementById('pg-output');
+            const exchangeRates = { '20': '1 紫', '21': '2 紫', '22': '3 紫', '23': '5 紫', '24': '8 紫' };
+
+            const priceData = {};
+            const itemPrices = [];
+            for (const category in data) {
+                data[category].forEach(item => {
+                    const priceMatch = String(item.price).match(/(\d+)#/);
+                    if (priceMatch) {
+                        const price = parseInt(priceMatch[1]);
+                        itemPrices.push(price);
+                    }
+                });
+            }
+
+            itemPrices.sort((a, b) => a - b);
+            
+            itemPrices.forEach(price => {
+                priceData[price] = (priceData[price] || 0) + 1;
+            });
+
+            const priceLabels = Object.keys(priceData).sort((a,b) => parseInt(a) - parseInt(b));
+            const priceValues = priceLabels.map(label => priceData[label]);
+
+            const priceDistributionCtx = document.getElementById('priceDistributionChart').getContext('2d');
+            const priceDistributionChart = new Chart(priceDistributionCtx, {
+                type: 'bar',
+                data: { labels: priceLabels, datasets: [{ label: '物品数量', data: priceValues, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: '数量' } }, x: { title: { display: true, text: '符文价格 (#)' } } }, plugins: { legend: { display: false } } }
+            });
+
+            const runeExchangeCtx = document.getElementById('runeExchangeChart').getContext('2d');
+            const runeExchangeChart = new Chart(runeExchangeCtx, {
+                type: 'doughnut',
+                data: { labels: ['20# = 1 紫', '21# = 2 紫', '22# = 3 紫', '23# = 5 紫', '24# = 8 紫'], datasets: [{ label: '兑换比例', data: [1, 2, 3, 5, 8], backgroundColor: ['rgba(245, 158, 11, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(168, 85, 247, 0.7)', 'rgba(244, 63, 94, 0.7)'], hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (context) => context.label || '' } } } }
+            });
+
+            const renderList = () => {
+                itemList.innerHTML = '';
+                let itemsToRender = [];
+                if(currentSearchTerm){
+                    for(const category in data){
+                        itemsToRender.push(...data[category]);
+                    }
+                } else {
+                    itemsToRender = data[currentCategory] || [];
+                }
+
+                let filteredItems = itemsToRender;
+
+                if (showHighlightedOnly) {
+                    filteredItems = filteredItems.filter(item => item.highlight);
+                }
+
+                if (currentSearchTerm) {
+                    const searchTermLower = currentSearchTerm.toLowerCase();
+                    filteredItems = filteredItems.filter(item => item.name.toLowerCase().includes(searchTermLower) || item.attrs.toLowerCase().includes(searchTermLower) || item.notes.toLowerCase().includes(searchTermLower));
+                }
+                
+                if (filteredItems.length === 0) {
+                    noResults.classList.remove('hidden');
+                } else {
+                    noResults.classList.add('hidden');
+                    filteredItems.forEach(item => {
+                        const itemCard = document.createElement('div');
+                        itemCard.className = `card-row bg-white rounded-lg p-4 shadow flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 transition-all cursor-pointer ${item.highlight ? 'highlighted-item' : ''}`;
+                        let nameHtml = `<span class="font-medium text-gray-900">${item.name}</span>`;
+                        if (item.highlight) nameHtml += ' <span class="highlighted-tag">好货</span>';
+                        itemCard.innerHTML = `<div class="flex flex-col md:flex-row md:items-center space-x-0 md:space-x-4 w-full"><div class="w-full md:w-1/3 text-left">${nameHtml}</div><div class="w-full md:w-1/2 text-sm text-gray-600 truncate">${item.attrs}</div></div><div class="flex-shrink-0 w-full md:w-auto text-right"><span class="text-lg font-bold text-red-600">${item.price}</span></div>`;
+                        itemCard.addEventListener('click', () => {
+                            modalItemName.textContent = item.name;
+                            modalItemAttrs.textContent = item.attrs || '无';
+                            modalItemPrice.textContent = item.price;
+                            modalItemNotes.textContent = item.notes || '无';
+                            modalSellerId.textContent = item.seller;
+                            modal.classList.remove('hidden');
+                            setTimeout(() => modal.querySelector('div').classList.remove('scale-95'), 10);
+                        });
+                        itemList.appendChild(itemCard);
+                    });
+                }
+            };
+            
+            closeModal.addEventListener('click', () => {
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            });
+
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) closeModal.click();
+            });
+
+            categories.forEach((category, index) => {
+                const button = document.createElement('button');
+                button.className = `nav-button py-2 px-4 rounded-md transition-colors ${index === 0 ? 'bg-gray-200 text-gray-800 font-semibold' : 'bg-white text-gray-700 font-medium hover:bg-gray-100'}`;
+                button.dataset.category = category;
+                button.textContent = category;
+                button.addEventListener('click', (e) => {
+                    document.querySelectorAll('.nav-button').forEach(btn => {
+                        btn.classList.remove('bg-gray-200', 'text-gray-800', 'font-semibold');
+                        btn.classList.add('bg-white', 'text-gray-700', 'font-medium');
+                    });
+                    e.target.classList.add('bg-gray-200', 'text-gray-800', 'font-semibold');
+                    e.target.classList.remove('bg-white', 'text-gray-700', 'font-medium');
+                    currentCategory = e.target.dataset.category;
+                    sectionTitle.textContent = currentCategory;
+                    itemSearch.value = "";
+                    currentSearchTerm = "";
+                    renderList();
+                });
+                categoryNav.appendChild(button);
+            });
+
+            itemSearch.addEventListener('input', (e) => {
+                currentSearchTerm = e.target.value;
+                if (currentSearchTerm) {
+                    sectionTitle.textContent = `搜索结果: "${currentSearchTerm}"`;
+                    document.querySelectorAll('.nav-button').forEach(btn => {
+                        btn.classList.remove('bg-gray-200', 'text-gray-800', 'font-semibold');
+                        btn.classList.add('bg-white', 'text-gray-700', 'font-medium');
+                    });
+                } else {
+                    sectionTitle.textContent = currentCategory;
+                    document.querySelector(`.nav-button[data-category="${currentCategory}"]`).classList.add('bg-gray-200', 'text-gray-800', 'font-semibold');
+                }
+                renderList();
+            });
+
+            highlightToggle.addEventListener('change', (e) => {
+                showHighlightedOnly = e.target.checked;
+                renderList();
+            });
+
+            runeSelect.addEventListener('change', (e) => {
+                pgOutput.textContent = exchangeRates[e.target.value];
+            });
+            
+            // 新增物品模块的JS逻辑
+            const addItemBtn = document.getElementById('add-item-btn');
+            const addNameInput = document.getElementById('add-name');
+            const addAttrsInput = document.getElementById('add-attrs');
+            const addPriceInput = document.getElementById('add-price');
+            const addNotesInput = document.getElementById('add-notes');
+            const addSellerInput = document.getElementById('add-seller');
+            const addHighlightCheckbox = document.getElementById('add-highlight');
+            const addMessageDiv = document.getElementById('add-message');
+
+            addItemBtn.addEventListener('click', () => {
+                const name = addNameInput.value.trim();
+                const price = addPriceInput.value.trim();
+                const seller = addSellerInput.value.trim();
+                if (!name || !price || !seller) {
+                    addMessageDiv.textContent = '物品名称、价格和卖家ID为必填项！';
+                    addMessageDiv.className = 'mt-4 text-center text-red-500';
+                    return;
+                }
+                const newItem = {
+                    name: name,
+                    attrs: addAttrsInput.value.trim() || '无',
+                    price: price,
+                    notes: addNotesInput.value.trim() || '无',
+                    seller: seller,
+                    highlight: addHighlightCheckbox.checked
+                };
+                data["新增物品"].push(newItem);
+                
+                // 确保“新增物品”分类被选中并渲染
+                const addedCategoryButton = document.querySelector(`.nav-button[data-category="新增物品"]`);
+                if(addedCategoryButton) addedCategoryButton.click();
+                
+                addMessageDiv.textContent = '物品添加成功！';
+                addMessageDiv.className = 'mt-4 text-center text-green-500';
+                
+                // 清空表单
+                addNameInput.value = '';
+                addAttrsInput.value = '';
+                addPriceInput.value = '';
+                addNotesInput.value = '';
+                addSellerInput.value = '';
+                addHighlightCheckbox.checked = false;
+            });
+            
+            sectionTitle.textContent = currentCategory;
+            renderList();
+        });
+    </script>
+</body>
+</html>
